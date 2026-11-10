@@ -22,6 +22,8 @@ const PREVIEW_SCALE = 0.55;
 const CARD_HORIZONTAL_PADDING = 12;
 const SCREEN_HORIZONTAL_PADDING = 18;
 const GRID_GAP = 12;
+// Default fallback width for SSR/initial render before client window dimensions hydrate
+const DEFAULT_WINDOW_WIDTH = 375;
 
 export default function HomeScreen() {
   const { colors } = useAppTheme();
@@ -33,8 +35,9 @@ export default function HomeScreen() {
   const isMounted = useRef(false);
 
   // Available width for a card in a 2-column layout:
-  // (windowWidth - 2 * SCREEN_HORIZONTAL_PADDING - GRID_GAP) / 2
-  const availableContentWidth = windowWidth - SCREEN_HORIZONTAL_PADDING * 2;
+  // Use a stable width on server/initial render so SSR matches initial client render
+  const effectiveWindowWidth = windowWidth || DEFAULT_WINDOW_WIDTH;
+  const availableContentWidth = effectiveWindowWidth - SCREEN_HORIZONTAL_PADDING * 2;
   const halfCardWidth = (availableContentWidth - GRID_GAP) / 2;
   const halfCardInnerWidth = Math.max(0, halfCardWidth - CARD_HORIZONTAL_PADDING * 2);
 
