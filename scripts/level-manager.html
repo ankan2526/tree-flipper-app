@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Tree Flipper Level Manager</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #F3F7F1;
+        color: #1E332D;
+        font-synthesis: none;
+        --background: #F3F7F1;
+        --card: #FFFFFF;
+        --ink: #1E332D;
+        --muted: #66766F;
+        --green: #3D8B63;
+        --pale-green: #E6F3E9;
+        --line: #E0E9E1;
+        --red: #E85D5D;
+        --blue: #4C7DF0;
+      }
+
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; background: var(--background); }
+      button, input { font: inherit; }
+      button {
+        color: var(--ink);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: opacity 120ms ease, border-color 120ms ease, transform 120ms ease;
+      }
+      button:hover { border-color: var(--green); }
+      button:active { transform: translateY(1px); }
+      button:disabled { cursor: not-allowed; opacity: 0.48; }
+      button:focus-visible, input:focus-visible {
+        outline: 2px solid var(--green);
+        outline-offset: 2px;
+      }
+      button.primary { color: #FFFFFF; background: var(--green); border-color: var(--green); font-weight: 800; }
+      button.soft { color: var(--green); background: var(--pale-green); border-color: transparent; font-weight: 700; }
+      button.danger { color: #B33E3E; background: #FFF1F0; border-color: #F4D6D3; }
+      button.small { padding: 7px 10px; font-size: 0.86rem; }
+      input {
+        color: var(--ink);
+        background: #FFFFFF;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 11px 12px;
+        min-width: 0;
+        width: 100%;
+      }
+      label { display: grid; gap: 7px; color: var(--muted); font-size: 0.83rem; font-weight: 700; }
+      header {
+        padding: 25px clamp(18px, 4vw, 54px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+      h1 { margin: 0; font-size: clamp(1.7rem, 3vw, 2.4rem); font-weight: 800; letter-spacing: -0.035em; }
+      header p, .subtle { color: var(--muted); margin: 5px 0 0; font-size: 0.92rem; }
+      .eyebrow { color: var(--green); font-size: 0.7rem; font-weight: 800; letter-spacing: 1.4px; margin-bottom: 5px; }
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(240px, 310px) minmax(0, 1fr);
+        gap: 16px;
+        padding: 8px clamp(18px, 4vw, 54px) 48px;
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+      aside, main { min-width: 0; }
+      .panel { background: var(--card); border: 1px solid var(--line); border-radius: 18px; }
+      .level-panel { padding: 16px; align-self: start; }
+      .level-heading, .section-heading, .form-actions, .color-actions, .inspector-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      h2 { font-size: 1.06rem; margin: 0; }
+      .level-count {
+        color: var(--green);
+        background: var(--pale-green);
+        border-radius: 14px;
+        padding: 5px 9px;
+        font-size: 0.75rem;
+        font-weight: 800;
+      }
+      .level-list { display: grid; gap: 9px; margin-top: 15px; }
+      .level-item {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 11px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: center;
+      }
+      .level-item.selected { border-color: var(--green); box-shadow: 0 0 0 2px #3D8B6318; }
+      .level-select { padding: 3px; border: 0; background: transparent; text-align: left; min-width: 0; }
+      .level-select strong, .level-select span { display: block; overflow-wrap: anywhere; }
+      .level-select strong { color: var(--ink); font-size: 0.95rem; }
+      .level-select span { color: var(--muted); font-size: 0.78rem; margin-top: 3px; }
+      main { padding: clamp(18px, 3vw, 28px); }
+      .section-heading { align-items: flex-start; }
+      .form-grid { display: grid; grid-template-columns: 0.7fr 1.3fr; gap: 14px; margin: 20px 0; }
+      .tree-title { margin: 24px 0 10px; align-items: end; }
+      .tree-help { font-size: 0.8rem; }
+      .tree-card {
+        background: #FBFDFC;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        overflow: hidden;
+      }
+      .tree-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+      .tree-legend { display: flex; gap: 12px; align-items: center; color: var(--muted); font-size: 0.76rem; }
+      .legend-item { display: inline-flex; gap: 6px; align-items: center; }
+      .legend-dot { display: inline-block; height: 10px; width: 10px; border-radius: 50%; }
+      .legend-dot.red { background: var(--red); }
+      .legend-dot.blue { background: var(--blue); }
+      .tree-scroll { overflow: auto; min-height: 185px; padding: 12px; }
+      #tree-visual { display: block; margin: 0 auto; overflow: visible; }
+      .tree-edge { stroke: #93A4A0; stroke-width: 3; stroke-linecap: round; }
+      .tree-node { cursor: pointer; }
+      .tree-node circle { stroke: #FFFFFF; stroke-width: 3; transition: filter 120ms ease, r 120ms ease; }
+      .tree-node:hover circle { filter: brightness(1.06); }
+      .tree-node.selected circle { stroke: var(--ink); stroke-width: 4; }
+      .tree-node:focus-visible { outline: none; }
+      .tree-node:focus-visible circle { stroke: var(--green); stroke-width: 5; }
+      .tree-node-label { fill: var(--ink); font-size: 12px; font-weight: 700; text-anchor: middle; pointer-events: none; }
+      .empty-tree { display: grid; place-items: center; min-height: 150px; color: var(--muted); font-size: 0.9rem; }
+      .node-inspector {
+        display: grid;
+        grid-template-columns: minmax(120px, 0.7fr) minmax(160px, 1fr) minmax(150px, 0.9fr) minmax(max-content, auto);
+        gap: 16px;
+        align-items: end;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 15px;
+        margin-top: 12px;
+      }
+      .inspector-title { color: var(--muted); font-size: 0.68rem; font-weight: 800; letter-spacing: 1px; }
+      .selected-node-name { color: var(--ink); font-weight: 800; margin-top: 3px; }
+      .color-actions { justify-content: flex-start; }
+      .color-button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; }
+      .color-button.active { box-shadow: 0 0 0 2px var(--ink); }
+      .color-button .legend-dot { height: 12px; width: 12px; }
+      .node-action-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+      .node-action-buttons button { white-space: nowrap; }
+      .form-actions { border-top: 1px solid var(--line); padding-top: 18px; margin-top: 20px; flex-wrap: wrap; }
+      #status { min-height: 1.5em; margin: 14px 0 0; color: var(--muted); font-size: 0.88rem; }
+      #status.error { color: #B33E3E; }
+      #status.success { color: var(--green); }
+      .footer-note { color: var(--muted); font-size: 0.78rem; margin: 16px 0 0; line-height: 1.5; }
+      .empty-state { color: var(--muted); padding: 12px 3px; line-height: 1.5; font-size: 0.88rem; }
+      @media (max-width: 900px) {
+        .layout { grid-template-columns: 1fr; }
+        .level-list { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+        .node-inspector { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+        .node-action-buttons { grid-column: 1 / -1; justify-content: flex-start; }
+      }
+      @media (max-width: 620px) {
+        header { align-items: flex-start; flex-direction: column; }
+        .form-grid { grid-template-columns: 1fr; }
+        .tree-title { align-items: flex-start; flex-direction: column; }
+        .node-inspector { grid-template-columns: 1fr; }
+        .node-action-buttons { justify-content: flex-start; }
+        .tree-toolbar { align-items: flex-start; flex-direction: column; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <div class="eyebrow">LEVEL DESIGN TOOL</div>
+        <h1>Tree Flipper Level Manager</h1>
+        <p>Manage the levels stored in <code>src/data/levels.js</code>.</p>
+      </div>
+      <button class="primary" id="new-level" type="button">＋ New level</button>
+    </header>
+    <div class="layout">
+      <aside class="panel level-panel" aria-label="Levels">
+        <div class="level-heading">
+          <h2>Levels</h2>
+          <span class="level-count" id="level-count"></span>
+        </div>
+        <div class="level-list" id="level-list"></div>
+        <p class="footer-note">Edits are written directly to the project’s level data file.</p>
+      </aside>
+      <main class="panel">
+        <div class="section-heading">
+          <div>
+            <h2 id="editor-title">New level</h2>
+            <p class="subtle">Set a target color and structure for every node.</p>
+          </div>
+        </div>
+        <form id="level-form">
+          <div class="form-grid">
+            <label>
+              Level ID
+              <input id="level-id" name="levelId" required autocomplete="off" spellcheck="false" />
+            </label>
+            <label>
+              Level name
+              <input id="level-name" name="levelName" required autocomplete="off" maxlength="100" />
+            </label>
+          </div>
+          <div class="section-heading tree-title">
+            <h2>Target tree</h2>
+            <span class="subtle tree-help">Select a node, then use the controls below to edit it.</span>
+          </div>
+          <div class="tree-card">
+            <div class="tree-toolbar">
+              <span class="subtle">Click any circle to select a node</span>
+              <div class="tree-legend" aria-label="Tree color legend">
+                <span class="legend-item"><span class="legend-dot red"></span>Red target</span>
+                <span class="legend-item"><span class="legend-dot blue"></span>Blue target</span>
+              </div>
+            </div>
+            <div class="tree-scroll" id="tree-editor" role="region" aria-label="Visual tree editor">
+              <svg id="tree-visual" role="group" aria-label="Target tree"></svg>
+            </div>
+          </div>
+          <section class="node-inspector" aria-label="Selected node controls">
+            <div>
+              <div class="inspector-title">SELECTED NODE</div>
+              <div class="selected-node-name" id="selected-node-name">Root node</div>
+            </div>
+            <label>
+              Node ID
+              <input id="selected-node-id" required autocomplete="off" spellcheck="false" />
+            </label>
+            <div>
+              <div class="inspector-title">TARGET COLOR</div>
+              <div class="color-actions">
+                <button class="color-button" id="color-red" type="button" aria-label="Set target color to red">
+                  <span class="legend-dot red"></span>Red
+                </button>
+                <button class="color-button" id="color-blue" type="button" aria-label="Set target color to blue">
+                  <span class="legend-dot blue"></span>Blue
+                </button>
+              </div>
+            </div>
+            <div class="node-action-buttons">
+              <button class="soft small" id="add-child" type="button">＋ Add child</button>
+              <button class="danger small" id="remove-node" type="button">Remove node</button>
+            </div>
+          </section>
+          <div class="form-actions">
+            <button class="primary" id="save-level" type="submit">Create level</button>
+            <button id="cancel-edit" type="button">Clear editor</button>
+          </div>
+          <p id="status" role="status" aria-live="polite"></p>
+        </form>
+      </main>
+    </div>
+    <script>
+      const API_TOKEN = "__LEVEL_MANAGER_TOKEN__";
+      const elements = {
+        addChild: document.getElementById("add-child"),
+        cancel: document.getElementById("cancel-edit"),
+        colorBlue: document.getElementById("color-blue"),
+        colorRed: document.getElementById("color-red"),
+        editorTitle: document.getElementById("editor-title"),
+        form: document.getElementById("level-form"),
+        id: document.getElementById("level-id"),
+        levelCount: document.getElementById("level-count"),
+        levelList: document.getElementById("level-list"),
+        name: document.getElementById("level-name"),
+        newLevel: document.getElementById("new-level"),
+        nodeId: document.getElementById("selected-node-id"),
+        nodeName: document.getElementById("selected-node-name"),
+        removeNode: document.getElementById("remove-node"),
+        save: document.getElementById("save-level"),
+        status: document.getElementById("status"),
+        tree: document.getElementById("tree-editor"),
+        visual: document.getElementById("tree-visual"),
+      };
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      let levels = [];
+      let revision = "";
+      let editingId = null;
+      let tree = { id: "root", targetColor: "red", children: [] };
+      let selectedPath = [];
+
+      function clone(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function setStatus(message, kind = "") {
+        elements.status.textContent = message;
+        elements.status.className = kind;
+      }
+
+      async function request(url, options = {}) {
+        const response = await fetch(url, {
+          ...options,
+          headers: {
+            "X-Level-Manager-Token": API_TOKEN,
+            ...(options.body ? { "Content-Type": "application/json" } : {}),
+            ...options.headers,
+          },
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || `Request failed (${response.status}).`);
+        }
+        return result;
+      }
+
+      function suggestedLevelId() {
+        const used = new Set(levels.map(({ id }) => id));
+        let index = 1;
+        while (used.has(`level-${index}`)) index += 1;
+        return `level-${index}`;
+      }
+
+      function getNodeAtPath(path) {
+        return path.reduce((node, index) => node?.children[index] ?? null, tree);
+      }
+
+      function getParentAtPath(path) {
+        if (path.length === 0) return null;
+        return getNodeAtPath(path.slice(0, -1));
+      }
+
+      function getPathKey(path) {
+        return path.join(".");
+      }
+
+      function usedNodeIds() {
+        const ids = new Set([elements.id.value.trim()]);
+        function visit(node) {
+          ids.add(node.id);
+          node.children.forEach(visit);
+        }
+        visit(tree);
+        return ids;
+      }
+
+      function suggestedNodeId() {
+        const used = usedNodeIds();
+        let index = 1;
+        let id = `node-${index}`;
+        while (used.has(id)) {
+          index += 1;
+          id = `node-${index}`;
+        }
+        return id;
+      }
+
+      function createSvgElement(tag, attributes = {}) {
+        const element = document.createElementNS(SVG_NS, tag);
+        for (const [name, value] of Object.entries(attributes)) {
+          element.setAttribute(name, String(value));
+        }
+        return element;
+      }
+
+      function createTreeLayout() {
+        let leafIndex = 0;
+        let maxDepth = 0;
+        const nodes = [];
+        const edges = [];
+        const leafCount = (node) =>
+          node.children.length === 0
+            ? 1
+            : node.children.reduce((sum, child) => sum + leafCount(child), 0);
+        const leaves = leafCount(tree);
+        const width = Math.max(460, leaves * 104 + 80);
+        const horizontalPadding = 40;
+        const verticalGap = 92;
+
+        function visit(node, path, depth) {
+          maxDepth = Math.max(maxDepth, depth);
+          const children = node.children.map((child, index) =>
+            visit(child, [...path, index], depth + 1),
+          );
+          const x = children.length
+            ? children.reduce((sum, child) => sum + child.x, 0) / children.length
+            : horizontalPadding +
+              ((width - horizontalPadding * 2) * (leafIndex++ + 0.5)) / leaves;
+          const position = {
+            id: node.id,
+            color: node.targetColor,
+            path,
+            x,
+            y: 42 + depth * verticalGap,
+          };
+          nodes.push(position);
+          children.forEach((child) => edges.push({ x1: x, y1: position.y, x2: child.x, y2: child.y }));
+          return position;
+        }
+
+        visit(tree, [], 0);
+        return { width, height: 42 + maxDepth * verticalGap + 54, nodes, edges };
+      }
+
+      function renderTreePreview() {
+        const layout = createTreeLayout();
+        elements.visual.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
+        elements.visual.setAttribute("width", String(layout.width));
+        elements.visual.setAttribute("height", String(layout.height));
+        elements.visual.replaceChildren();
+
+        layout.edges.forEach((edge) => {
+          elements.visual.append(
+            createSvgElement("line", {
+              class: "tree-edge",
+              x1: edge.x1,
+              y1: edge.y1,
+              x2: edge.x2,
+              y2: edge.y2,
+            }),
+          );
+        });
+
+        layout.nodes.forEach((node) => {
+          const key = getPathKey(node.path);
+          const group = createSvgElement("g", {
+            class: `tree-node${key === getPathKey(selectedPath) ? " selected" : ""}`,
+            role: "button",
+            tabindex: "0",
+            "aria-label": `${node.id || "Unnamed node"}, ${node.color} target`,
+          });
+          const circle = createSvgElement("circle", {
+            cx: node.x,
+            cy: node.y,
+            r: 21,
+            fill: node.color === "blue" ? "#4C7DF0" : "#E85D5D",
+          });
+          const label = createSvgElement("text", {
+            class: "tree-node-label",
+            x: node.x,
+            y: node.y + 42,
+          });
+          label.textContent = node.id || "Unnamed";
+          group.append(circle, label);
+          const select = () => {
+            selectedPath = node.path;
+            renderTree();
+          };
+          group.addEventListener("click", select);
+          group.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              select();
+            }
+          });
+          elements.visual.append(group);
+        });
+      }
+
+      function renderInspector() {
+        const selected = getNodeAtPath(selectedPath);
+        if (!selected) {
+          selectedPath = [];
+          renderInspector();
+          return;
+        }
+        elements.nodeName.textContent = selectedPath.length ? selected.id || "Unnamed node" : "Root node";
+        elements.nodeId.value = selected.id;
+        elements.nodeId.disabled = false;
+        elements.colorRed.classList.toggle("active", selected.targetColor === "red");
+        elements.colorBlue.classList.toggle("active", selected.targetColor === "blue");
+        elements.removeNode.disabled = selectedPath.length === 0;
+        elements.removeNode.title = selectedPath.length === 0 ? "The root node cannot be removed" : "";
+      }
+
+      function renderTree() {
+        renderTreePreview();
+        renderInspector();
+      }
+
+      function renderLevels() {
+        elements.levelCount.textContent = `${levels.length} total`;
+        elements.levelList.replaceChildren();
+        if (!levels.length) {
+          const empty = document.createElement("p");
+          empty.className = "empty-state";
+          empty.textContent = "No levels yet. Create one to get started.";
+          elements.levelList.append(empty);
+          return;
+        }
+        levels.forEach((level) => {
+          const row = document.createElement("div");
+          row.className = `level-item${editingId === level.id ? " selected" : ""}`;
+          const select = document.createElement("button");
+          select.className = "level-select";
+          select.type = "button";
+          const name = document.createElement("strong");
+          name.textContent = level.name;
+          const id = document.createElement("span");
+          id.textContent = level.id;
+          select.append(name, id);
+          select.addEventListener("click", () => loadLevel(level.id));
+
+          const remove = document.createElement("button");
+          remove.className = "small danger";
+          remove.type = "button";
+          remove.textContent = "Delete";
+          remove.setAttribute("aria-label", `Delete ${level.name}`);
+          remove.addEventListener("click", () => deleteLevel(level));
+          row.append(select, remove);
+          elements.levelList.append(row);
+        });
+      }
+
+      function loadLevel(id) {
+        const level = levels.find((entry) => entry.id === id);
+        if (!level) return;
+        editingId = level.id;
+        elements.id.value = level.id;
+        elements.name.value = level.name;
+        tree = clone(level.tree);
+        selectedPath = [];
+        elements.editorTitle.textContent = `Edit: ${level.name}`;
+        elements.save.textContent = "Save changes";
+        setStatus("");
+        renderTree();
+        renderLevels();
+      }
+
+      function startNewLevel() {
+        editingId = null;
+        elements.form.reset();
+        elements.id.value = suggestedLevelId();
+        elements.name.value = "";
+        tree = { id: "root", targetColor: "red", children: [] };
+        selectedPath = [];
+        elements.editorTitle.textContent = "New level";
+        elements.save.textContent = "Create level";
+        setStatus("");
+        renderTree();
+        renderLevels();
+        elements.name.focus();
+      }
+
+      function currentLevel() {
+        function copyNode(node) {
+          return {
+            id: node.id.trim(),
+            targetColor: node.targetColor,
+            children: node.children.map(copyNode),
+          };
+        }
+        return { id: elements.id.value.trim(), name: elements.name.value.trim(), tree: copyNode(tree) };
+      }
+
+      elements.nodeId.addEventListener("input", () => {
+        const selected = getNodeAtPath(selectedPath);
+        if (!selected) return;
+        selected.id = elements.nodeId.value;
+        elements.nodeName.textContent = selectedPath.length ? selected.id || "Unnamed node" : "Root node";
+        renderTreePreview();
+      });
+
+      elements.colorRed.addEventListener("click", () => {
+        const selected = getNodeAtPath(selectedPath);
+        if (!selected) return;
+        selected.targetColor = "red";
+        renderTree();
+      });
+
+      elements.colorBlue.addEventListener("click", () => {
+        const selected = getNodeAtPath(selectedPath);
+        if (!selected) return;
+        selected.targetColor = "blue";
+        renderTree();
+      });
+
+      elements.addChild.addEventListener("click", () => {
+        const selected = getNodeAtPath(selectedPath);
+        if (!selected) return;
+        if (selectedPath.length >= 99) {
+          setStatus("The tree cannot be deeper than 100 levels.", "error");
+          return;
+        }
+        let count = 0;
+        const countNodes = (node) => {
+          count += 1;
+          node.children.forEach(countNodes);
+        };
+        countNodes(tree);
+        if (count >= 1000) {
+          setStatus("A level cannot contain more than 1000 nodes.", "error");
+          return;
+        }
+        selected.children.push({
+          id: suggestedNodeId(),
+          targetColor: "red",
+          children: [],
+        });
+        selectedPath = [...selectedPath, selected.children.length - 1];
+        setStatus("");
+        renderTree();
+      });
+
+      elements.removeNode.addEventListener("click", () => {
+        if (selectedPath.length === 0) return;
+        const parent = getParentAtPath(selectedPath);
+        const index = selectedPath[selectedPath.length - 1];
+        if (!parent) return;
+        parent.children.splice(index, 1);
+        selectedPath = selectedPath.slice(0, -1);
+        setStatus("");
+        renderTree();
+      });
+
+      async function refreshLevels(message = "Levels loaded.") {
+        const result = await request("/api/levels");
+        levels = result.levels;
+        revision = result.revision;
+        if (editingId === null) elements.id.value = suggestedLevelId();
+        renderLevels();
+        if (message) setStatus(message, "success");
+      }
+
+      elements.form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        elements.save.disabled = true;
+        try {
+          const level = currentLevel();
+          const isEditing = editingId !== null;
+          const result = await request(
+            isEditing ? `/api/levels/${encodeURIComponent(editingId)}` : "/api/levels",
+            {
+              method: isEditing ? "PUT" : "POST",
+              body: JSON.stringify({ level, revision }),
+            },
+          );
+          levels = result.levels;
+          revision = result.revision;
+          editingId = level.id;
+          tree = clone(level.tree);
+          elements.id.value = level.id;
+          elements.editorTitle.textContent = `Edit: ${level.name}`;
+          elements.save.textContent = "Save changes";
+          selectedPath = [];
+          renderTree();
+          renderLevels();
+          setStatus(`Saved “${level.name}” to levels.js.`, "success");
+        } catch (error) {
+          setStatus(error.message, "error");
+        } finally {
+          elements.save.disabled = false;
+        }
+      });
+
+      async function deleteLevel(level) {
+        if (!window.confirm(`Permanently delete “${level.name}” (${level.id})?`)) return;
+        try {
+          const result = await request(`/api/levels/${encodeURIComponent(level.id)}`, {
+            method: "DELETE",
+            body: JSON.stringify({ revision }),
+          });
+          levels = result.levels;
+          revision = result.revision;
+          if (editingId === level.id) startNewLevel();
+          renderLevels();
+          setStatus(`Deleted “${level.name}”.`, "success");
+        } catch (error) {
+          setStatus(error.message, "error");
+        }
+      }
+
+      elements.newLevel.addEventListener("click", startNewLevel);
+      elements.cancel.addEventListener("click", startNewLevel);
+      renderTree();
+      refreshLevels().catch((error) => setStatus(error.message, "error"));
+    </script>
+  </body>
+</html>
