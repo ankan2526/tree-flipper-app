@@ -28,15 +28,16 @@ const DEFAULT_WINDOW_WIDTH = 375;
 export default function HomeScreen() {
   const { colors } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [completedLevels, setCompletedLevels] = useState([]);
   const [bestScores, setBestScores] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const isMounted = useRef(false);
 
-  // Available width for a card in a 2-column layout:
-  // Use a stable width on server/initial render so SSR matches initial client render
-  const effectiveWindowWidth = windowWidth || DEFAULT_WINDOW_WIDTH;
+  // Keep the first client render identical to SSR before using browser dimensions.
+  const effectiveWindowWidth =
+    hasHydrated && windowWidth ? windowWidth : DEFAULT_WINDOW_WIDTH;
   const availableContentWidth = effectiveWindowWidth - SCREEN_HORIZONTAL_PADDING * 2;
   const halfCardWidth = (availableContentWidth - GRID_GAP) / 2;
   const halfCardInnerWidth = Math.max(0, halfCardWidth - CARD_HORIZONTAL_PADDING * 2);
@@ -65,6 +66,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     isMounted.current = true;
+    setHasHydrated(true);
 
     return () => {
       isMounted.current = false;
