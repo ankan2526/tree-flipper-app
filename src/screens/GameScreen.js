@@ -48,8 +48,8 @@ export default function GameScreen({ levelId }) {
   const completeLevel = useCallback(async (finalMoveCount) => {
     try {
       await saveCompletedLevel(level.id);
-      const updatedScores = await saveBestScore(level.id, finalMoveCount);
-      if (updatedScores && updatedScores[level.id] === finalMoveCount) {
+      const { isNewBest } = await saveBestScore(level.id, finalMoveCount);
+      if (isNewBest) {
         setIsNewBestScore(true);
       }
     } catch (error) {

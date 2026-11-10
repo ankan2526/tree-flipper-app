@@ -15,12 +15,19 @@ const HORIZONTAL_PADDING = 28;
 const TOP_PADDING = 28;
 const BOTTOM_PADDING = 28;
 
-function countLeaves(node) {
+export function countLeaves(node) {
   if (!node.children || node.children.length === 0) {
     return 1;
   }
 
   return node.children.reduce((sum, child) => sum + countLeaves(child), 0);
+}
+
+export function getTreeNaturalWidth(tree) {
+  if (!tree) return 120;
+  const leafCount = countLeaves(tree);
+  const naturalWidth = leafCount * HORIZONTAL_GAP + HORIZONTAL_PADDING * 2;
+  return Math.max(120, naturalWidth);
 }
 
 function createLayout(tree) {

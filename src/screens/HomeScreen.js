@@ -7,23 +7,36 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useFocusEffect, router } from 'expo-router';
 
-import TreeRenderer from '../components/TreeRenderer';
+import TreeRenderer, { getTreeNaturalWidth } from '../components/TreeRenderer';
 import { GAME_LEVELS } from '../data/levels';
 import { getBestScores, getCompletedLevels } from '../utils/storage';
 import { useAppTheme } from '../context/ThemeContext';
 import SettingsModal from './SettingsModal';
 
+const PREVIEW_SCALE = 0.55;
+const CARD_HORIZONTAL_PADDING = 12;
+const SCREEN_HORIZONTAL_PADDING = 18;
+const GRID_GAP = 12;
+
 export default function HomeScreen() {
   const { colors } = useAppTheme();
+  const { width: windowWidth } = useWindowDimensions();
   const [completedLevels, setCompletedLevels] = useState([]);
   const [bestScores, setBestScores] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const isMounted = useRef(false);
+
+  // Available width for a card in a 2-column layout:
+  // (windowWidth - 2 * SCREEN_HORIZONTAL_PADDING - GRID_GAP) / 2
+  const availableContentWidth = windowWidth - SCREEN_HORIZONTAL_PADDING * 2;
+  const halfCardWidth = (availableContentWidth - GRID_GAP) / 2;
+  const halfCardInnerWidth = Math.max(0, halfCardWidth - CARD_HORIZONTAL_PADDING * 2);
 
   const loadProgress = useCallback(async () => {
     try {
@@ -62,14 +75,54 @@ export default function HomeScreen() {
     }, [loadProgress]),
   );
 
-  const renderLevel = ({ item, index }) => {
+  // Determine whether each level needs a full-width row or can share a 2-column row
+  // A tree overflows half-card preview if its scaled width exceeds the inner preview box width.
+  const levelItems = GAME_LEVELS.map((level, index) => {
+    const naturalWidth = getTreeNaturalWidth(level.tree);
+    const scaledWidth = naturalWidth * PREVIEW_SCALE;
+    const isFullWidth = scaledWidth > halfCardInnerWidth;
+    return {
+      ...level,
+      index,
+      isFullWidth,
+    };
+  });
+
+  // Group items into visual rows:
+  // - If isFullWidth: takes an entire row (1 item)
+  // - Otherwise: paired with the next non-full-width item into a 2-item row
+  const rows = [];
+  let pendingHalfItem = null;
+
+  for (let i = 0; i < levelItems.length; i++) {
+    const item = levelItems[i];
+    if (item.isFullWidth) {
+      if (pendingHalfItem) {
+        rows.push({ id: `row-${pendingHalfItem.id}`, items: [pendingHalfItem] });
+        pendingHalfItem = null;
+      }
+      rows.push({ id: `row-${item.id}`, items: [item] });
+    } else {
+      if (pendingHalfItem) {
+        rows.push({ id: `row-${pendingHalfItem.id}-${item.id}`, items: [pendingHalfItem, item] });
+        pendingHalfItem = null;
+      } else {
+        pendingHalfItem = item;
+      }
+    }
+  }
+  if (pendingHalfItem) {
+    rows.push({ id: `row-${pendingHalfItem.id}`, items: [pendingHalfItem] });
+  }
+
+  const renderCard = (item, isSingleInRow) => {
     const isComplete = completedLevels.includes(item.id);
-    // Level 1 is always unlocked. Next levels are unlocked if the previous level is complete.
-    const isUnlocked = index === 0 || completedLevels.includes(GAME_LEVELS[index - 1].id);
+    const isUnlocked = item.index === 0 || completedLevels.includes(GAME_LEVELS[item.index - 1].id);
     const bestScore = bestScores[item.id];
 
     return (
       <Pressable
+        key={item.id}
         accessibilityRole="button"
         accessibilityLabel={`${item.name}${!isUnlocked ? ', locked' : isComplete ? ', completed' : ''}`}
         disabled={!isUnlocked}
@@ -79,6 +132,7 @@ export default function HomeScreen() {
         }}
         style={({ pressed }) => [
           styles.levelCard,
+          isSingleInRow ? styles.fullWidthCard : styles.halfWidthCard,
           {
             backgroundColor: isUnlocked ? colors.card : colors.lockedBg,
             borderColor: !isUnlocked
@@ -99,7 +153,7 @@ export default function HomeScreen() {
               { color: isUnlocked ? colors.muted : colors.lockedText },
             ]}
           >
-            LEVEL {String(index + 1).padStart(2, '0')}
+            LEVEL {String(item.index + 1).padStart(2, '0')}
           </Text>
           {isComplete ? (
             <View style={[styles.badge, { backgroundColor: colors.primary }]}>
@@ -123,7 +177,7 @@ export default function HomeScreen() {
         </Text>
 
         <View style={styles.treePreviewWrapper}>
-          <TreeRenderer tree={item.tree} scale={0.55} />
+          <TreeRenderer tree={item.tree} scale={PREVIEW_SCALE} />
         </View>
 
         <View style={styles.levelBottom}>
@@ -139,9 +193,7 @@ export default function HomeScreen() {
               {
                 color: !isUnlocked
                   ? colors.lockedText
-                  : isComplete
-                    ? colors.primary
-                    : colors.primary,
+                  : colors.primary,
               },
             ]}
           >
@@ -156,14 +208,21 @@ export default function HomeScreen() {
     );
   };
 
+  const renderRow = ({ item: row }) => {
+    const isSingle = row.items.length === 1;
+    return (
+      <View style={styles.levelRow}>
+        {row.items.map((item) => renderCard(item, isSingle))}
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <FlatList
-        data={GAME_LEVELS}
+        data={rows}
         keyExtractor={(item) => item.id}
-        renderItem={renderLevel}
-        numColumns={2}
-        columnWrapperStyle={styles.levelRow}
+        renderItem={renderRow}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <View style={styles.heading}>
@@ -231,7 +290,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 18,
+    paddingHorizontal: SCREEN_HORIZONTAL_PADDING,
     paddingTop: 16,
     paddingBottom: 36,
   },
@@ -281,17 +340,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   levelRow: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: GRID_GAP,
     marginBottom: 12,
   },
   levelCard: {
     borderRadius: 18,
-    flex: 1,
     minHeight: 215,
     overflow: 'hidden',
-    padding: 12,
+    padding: CARD_HORIZONTAL_PADDING,
     justifyContent: 'space-between',
+  },
+  halfWidthCard: {
+    flex: 1,
+  },
+  fullWidthCard: {
+    width: '100%',
   },
   pressedCard: {
     opacity: 0.8,

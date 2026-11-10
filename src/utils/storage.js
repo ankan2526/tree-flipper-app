@@ -55,7 +55,7 @@ export async function getBestScores() {
 
 export async function saveBestScore(levelId, moves) {
   if (typeof levelId !== 'string' || typeof moves !== 'number') {
-    return;
+    return { isNewBest: false, scores: {} };
   }
   const currentScores = await getBestScores();
   const currentBest = currentScores[levelId];
@@ -65,9 +65,9 @@ export async function saveBestScore(levelId, moves) {
       [levelId]: moves,
     };
     await AsyncStorage.setItem(BEST_SCORES_KEY, JSON.stringify(updated));
-    return updated;
+    return { isNewBest: true, scores: updated };
   }
-  return currentScores;
+  return { isNewBest: false, scores: currentScores };
 }
 
 export async function getThemeSetting() {
