@@ -24,8 +24,9 @@
       }
 
       * { box-sizing: border-box; }
+      [hidden] { display: none !important; }
       body { margin: 0; min-height: 100vh; background: var(--background); }
-      button, input { font: inherit; }
+      button, input, select { font: inherit; }
       button {
         color: var(--ink);
         background: var(--card);
@@ -38,7 +39,7 @@
       button:hover { border-color: var(--green); }
       button:active { transform: translateY(1px); }
       button:disabled { cursor: not-allowed; opacity: 0.48; }
-      button:focus-visible, input:focus-visible {
+      button:focus-visible, input:focus-visible, select:focus-visible {
         outline: 2px solid var(--green);
         outline-offset: 2px;
       }
@@ -46,7 +47,7 @@
       button.soft { color: var(--green); background: var(--pale-green); border-color: transparent; font-weight: 700; }
       button.danger { color: #B33E3E; background: #FFF1F0; border-color: #F4D6D3; }
       button.small { padding: 7px 10px; font-size: 0.86rem; }
-      input {
+      input, select {
         color: var(--ink);
         background: #FFFFFF;
         border: 1px solid var(--line);
@@ -111,7 +112,7 @@
       .level-select span { color: var(--muted); font-size: 0.78rem; margin-top: 3px; }
       main { padding: clamp(18px, 3vw, 28px); }
       .section-heading { align-items: flex-start; }
-      .form-grid { display: grid; grid-template-columns: 0.7fr 1.3fr; gap: 14px; margin: 20px 0; }
+      .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 20px 0; }
       .tree-title { margin: 24px 0 10px; align-items: end; }
       .tree-help { font-size: 0.8rem; }
       .tree-card {
@@ -213,6 +214,14 @@
               Level name
               <input id="level-name" name="levelName" required autocomplete="off" maxlength="100" />
             </label>
+            <label>
+              Chapter
+              <select id="level-chapter" name="chapterId"></select>
+            </label>
+            <label id="move-limit-field">
+              Move limit
+              <input id="move-limit" name="moveLimit" type="number" min="1" step="1" inputmode="numeric" />
+            </label>
           </div>
           <div class="section-heading tree-title">
             <h2>Target tree</h2>
@@ -272,10 +281,13 @@
         colorRed: document.getElementById("color-red"),
         editorTitle: document.getElementById("editor-title"),
         form: document.getElementById("level-form"),
+        chapter: document.getElementById("level-chapter"),
         id: document.getElementById("level-id"),
         levelCount: document.getElementById("level-count"),
         levelList: document.getElementById("level-list"),
         name: document.getElementById("level-name"),
+        moveLimit: document.getElementById("move-limit"),
+        moveLimitField: document.getElementById("move-limit-field"),
         newLevel: document.getElementById("new-level"),
         nodeId: document.getElementById("selected-node-id"),
         nodeName: document.getElementById("selected-node-name"),
@@ -287,6 +299,7 @@
       };
       const SVG_NS = "http://www.w3.org/2000/svg";
       let levels = [];
+      let chapters = [];
       let revision = "";
       let editingId = null;
       let tree = { id: "root", targetColor: "red", children: [] };
@@ -501,7 +514,10 @@
           name.textContent = level.name;
           const id = document.createElement("span");
           id.textContent = level.id;
-          select.append(name, id);
+          const chapter = document.createElement("span");
+          chapter.textContent =
+            chapters.find((entry) => entry.id === level.chapterId)?.title || level.chapterId;
+          select.append(name, id, chapter);
           select.addEventListener("click", () => loadLevel(level.id));
 
           const remove = document.createElement("button");
@@ -521,6 +537,9 @@
         editingId = level.id;
         elements.id.value = level.id;
         elements.name.value = level.name;
+        elements.chapter.value = level.chapterId || chapters[0]?.id || "";
+        elements.moveLimit.value = level.moveLimit ?? "";
+        updateMoveLimitVisibility();
         tree = clone(level.tree);
         selectedPath = [];
         elements.editorTitle.textContent = `Edit: ${level.name}`;
@@ -535,6 +554,9 @@
         elements.form.reset();
         elements.id.value = suggestedLevelId();
         elements.name.value = "";
+        elements.chapter.value = chapters[0]?.id || "";
+        elements.moveLimit.value = "";
+        updateMoveLimitVisibility();
         tree = { id: "root", targetColor: "red", children: [] };
         selectedPath = [];
         elements.editorTitle.textContent = "New level";
@@ -553,7 +575,27 @@
             children: node.children.map(copyNode),
           };
         }
-        return { id: elements.id.value.trim(), name: elements.name.value.trim(), tree: copyNode(tree) };
+        const level = {
+          id: elements.id.value.trim(),
+          name: elements.name.value.trim(),
+          chapterId: elements.chapter.value,
+          tree: copyNode(tree),
+        };
+        if (isMoveLimitEnabled()) {
+          level.moveLimit = Number(elements.moveLimit.value);
+        }
+        return level;
+      }
+
+      function isMoveLimitEnabled() {
+        return chapters.find(({ id }) => id === elements.chapter.value)?.moveLimitMode === "per-level";
+      }
+
+      function updateMoveLimitVisibility() {
+        const isRequired = isMoveLimitEnabled();
+        elements.moveLimitField.hidden = !isRequired;
+        elements.moveLimit.required = isRequired;
+        if (!isRequired) elements.moveLimit.value = "";
       }
 
       elements.nodeId.addEventListener("input", () => {
@@ -619,8 +661,17 @@
       async function refreshLevels(message = "Levels loaded.") {
         const result = await request("/api/levels");
         levels = result.levels;
+        chapters = result.chapters;
         revision = result.revision;
+        elements.chapter.replaceChildren();
+        chapters.forEach((chapter) => {
+          const option = document.createElement("option");
+          option.value = chapter.id;
+          option.textContent = chapter.title;
+          elements.chapter.append(option);
+        });
         if (editingId === null) elements.id.value = suggestedLevelId();
+        updateMoveLimitVisibility();
         renderLevels();
         if (message) setStatus(message, "success");
       }
@@ -675,6 +726,7 @@
 
       elements.newLevel.addEventListener("click", startNewLevel);
       elements.cancel.addEventListener("click", startNewLevel);
+      elements.chapter.addEventListener("change", updateMoveLimitVisibility);
       renderTree();
       refreshLevels().catch((error) => setStatus(error.message, "error"));
     </script>

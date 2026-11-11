@@ -1,0 +1,14 @@
+[
+  {
+    "id": "chapter-1",
+    "title": "Roots of Reason",
+    "description": "Learn to think in branches and flip your way through the canopy.",
+    "moveLimitMode": "none"
+  },
+  {
+    "id": "chapter-2",
+    "title": "Branches Under Pressure",
+    "description": "Match each tree before your limited moves run out.",
+    "moveLimitMode": "per-level"
+  }
+]

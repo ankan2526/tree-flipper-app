@@ -24,6 +24,14 @@ Open the app in Expo Go, an iOS simulator, or an Android emulator.
 Use the Developer: Level Builder button on the home screen to create and copy
 JSON for an additional level.
 
+Levels are grouped into chapters using `src/data/chapters.json`. Chapter 1,
+“Roots of Reason,” uses the standard rules. Chapter 2, “Branches Under
+Pressure,” gives each level a move limit; special moves count toward that
+limit, and a level can be retried if the moves run out. The home screen
+provides chapter tabs and opens on the chapter with the next unlocked,
+unfinished level. Completing a chapter’s final level shows a congratulations
+screen before offering to continue into the next chapter.
+
 ## Manage levels with the local UI
 
 From the project directory, run:
@@ -36,7 +44,8 @@ Open the printed `http://127.0.0.1:4173` address in your browser. This
 standalone local-only interface matches the app’s light green-and-white theme
 and renders each level as a clickable tree. Select a node to edit its ID or
 target color, add a child, or remove it; the same interface creates, edits, and
-deletes levels. Changes are validated and written directly to
+deletes levels. Select a chapter when creating or editing a level; chapters
+with limited moves require a per-level move limit. Changes are validated and written directly to
 `src/data/levels.js`; the manager uses only Node.js built-ins and is not
 included in the Expo app. Stop it with Ctrl+C when finished.
 

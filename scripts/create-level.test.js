@@ -30,8 +30,10 @@ const sampleLevel = {
 
 test('parses and validates the checked-in level schema', () => {
   const { levels } = parseLevelsSource(existingSource);
-  assert.deepEqual(levels.map(({ id }) => id), ['level-1', 'level-2']);
-  assert.equal(validateLevels(levels).size, 2);
+  assert.ok(levels.length >= 2);
+  assert.equal(levels[0].id, 'level-1');
+  assert.equal(validateLevels(levels).size, levels.length);
+  assert.equal(levels.find(({ id }) => id === 'level-21').moveLimit, 2);
 });
 
 test('rejects duplicate IDs, invalid colors, and malformed tree shapes', () => {
@@ -67,11 +69,12 @@ test('appends a validated level without changing existing entries', () => {
   const updatedSource = prepareAppend(existingSource, sampleLevel);
   const { levels } = parseLevelsSource(updatedSource);
   validateLevels(levels);
-  assert.equal(levels.length, 3);
-  assert.deepEqual(JSON.parse(JSON.stringify(levels[2])), sampleLevel);
+  const originalLevels = parseLevelsSource(existingSource).levels;
+  assert.equal(levels.length, originalLevels.length + 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(levels.at(-1))), sampleLevel);
   assert.deepEqual(
-    JSON.parse(JSON.stringify(levels.slice(0, 2))),
-    JSON.parse(JSON.stringify(parseLevelsSource(existingSource).levels)),
+    JSON.parse(JSON.stringify(levels.slice(0, originalLevels.length))),
+    JSON.parse(JSON.stringify(originalLevels)),
   );
 });
 

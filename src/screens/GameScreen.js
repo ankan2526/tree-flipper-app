@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 
 import TreeRenderer from '../components/TreeRenderer';
 import { GAME_LEVELS } from '../data/levels';
+import GAME_CHAPTERS from '../data/chapters.json';
 import {
   checkWinCondition,
   flipSingleNode,
@@ -19,6 +20,7 @@ import {
 } from '../utils/gameLogic';
 import { saveBestScore, saveCompletedLevel } from '../utils/storage';
 import { useAppTheme } from '../context/ThemeContext';
+import { useAudio } from '../context/AudioContext';
 
 function createAllRedTree(node) {
   return {
@@ -30,7 +32,20 @@ function createAllRedTree(node) {
 
 export default function GameScreen({ levelId }) {
   const { colors } = useAppTheme();
+  const {
+    playFlipSound,
+    playSpecialSound,
+    playVictorySound,
+    playFailSound,
+    playTapSound,
+  } = useAudio();
   const level = GAME_LEVELS.find((item) => item.id === levelId);
+  const chapter = level
+    ? GAME_CHAPTERS.find(
+        (item) => item.id === (level.chapterId || GAME_CHAPTERS[0].id),
+      )
+    : null;
+  const moveLimit = chapter?.moveLimitMode === 'per-level' ? level?.moveLimit : null;
   const [currentTree, setCurrentTree] = useState(() =>
     level ? createAllRedTree(level.tree) : null,
   );
@@ -39,13 +54,29 @@ export default function GameScreen({ levelId }) {
   const [isSpecialMoveActive, setIsSpecialMoveActive] = useState(false);
   const [moveCount, setMoveCount] = useState(0);
   const [isCompletionVisible, setIsCompletionVisible] = useState(false);
+  const [isChapterCompletionVisible, setIsChapterCompletionVisible] = useState(false);
+  const [isOutOfMovesVisible, setIsOutOfMovesVisible] = useState(false);
   const [completionSaveError, setCompletionSaveError] = useState(null);
   const [isNewBestScore, setIsNewBestScore] = useState(false);
   const hasWon = useRef(false);
+  const hasLost = useRef(false);
   const levelIndex = GAME_LEVELS.findIndex((item) => item.id === levelId);
-  const nextLevel = levelIndex >= 0 ? GAME_LEVELS[levelIndex + 1] : null;
+  const chapterIndex = chapter ? GAME_CHAPTERS.indexOf(chapter) : -1;
+  const nextChapter = chapterIndex >= 0 ? GAME_CHAPTERS[chapterIndex + 1] : null;
+  const chapterLevels = GAME_LEVELS.filter(
+    (item) => (item.chapterId || GAME_CHAPTERS[0].id) === chapter?.id,
+  );
+  const chapterLevelIndex = chapterLevels.findIndex((item) => item.id === levelId);
+  const isChapterFinalLevel =
+    chapterLevelIndex >= 0 && chapterLevelIndex === chapterLevels.length - 1;
+  const nextLevel = isChapterFinalLevel
+    ? GAME_LEVELS.find(
+        (item) => (item.chapterId || GAME_CHAPTERS[0].id) === nextChapter?.id,
+      ) || null
+    : chapterLevels[chapterLevelIndex + 1] || null;
 
   const completeLevel = useCallback(async (finalMoveCount) => {
+    playVictorySound();
     try {
       await saveCompletedLevel(level.id);
       const { isNewBest } = await saveBestScore(level.id, finalMoveCount);
@@ -56,10 +87,23 @@ export default function GameScreen({ levelId }) {
       const message = error instanceof Error ? error.message : 'Unknown storage error.';
       setCompletionSaveError(message);
     }
+    setIsChapterCompletionVisible(isChapterFinalLevel);
     setIsCompletionVisible(true);
-  }, [level]);
+  }, [isChapterFinalLevel, level, playVictorySound]);
 
   const handleGoHome = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/');
+  }, []);
+
+  const handleBackToLevels = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
     router.replace('/');
   }, []);
 
@@ -70,9 +114,26 @@ export default function GameScreen({ levelId }) {
     router.replace({ pathname: '/game', params: { levelId: nextLevel.id } });
   }, [nextLevel]);
 
+  const handleRetryLevel = useCallback(() => {
+    if (!level) {
+      return;
+    }
+    hasWon.current = false;
+    hasLost.current = false;
+    setCurrentTree(createAllRedTree(level.tree));
+    setMoveCount(0);
+    setSpecialMoves(3);
+    setIsSpecialMoveActive(false);
+    setIsCompletionVisible(false);
+    setIsChapterCompletionVisible(false);
+    setIsOutOfMovesVisible(false);
+    setCompletionSaveError(null);
+    setIsNewBestScore(false);
+  }, [level]);
+
   const handleNodePress = useCallback(
     (nodeId) => {
-      if (!currentTree || !targetTree || hasWon.current) {
+      if (!currentTree || !targetTree || hasWon.current || hasLost.current) {
         return;
       }
 
@@ -90,18 +151,36 @@ export default function GameScreen({ levelId }) {
       setMoveCount(nextMoveCount);
 
       if (useSpecialMove) {
+        playSpecialSound();
         setSpecialMoves((count) => count - 1);
         if (specialMoves === 1) {
           setIsSpecialMoveActive(false);
         }
+      } else {
+        playFlipSound();
       }
 
       if (checkWinCondition(nextTree, targetTree)) {
         hasWon.current = true;
         void completeLevel(nextMoveCount);
+      } else if (moveLimit && nextMoveCount >= moveLimit) {
+        hasLost.current = true;
+        playFailSound();
+        setIsOutOfMovesVisible(true);
       }
     },
-    [completeLevel, currentTree, isSpecialMoveActive, moveCount, specialMoves, targetTree],
+    [
+      completeLevel,
+      currentTree,
+      isSpecialMoveActive,
+      moveCount,
+      moveLimit,
+      playFailSound,
+      playFlipSound,
+      playSpecialSound,
+      specialMoves,
+      targetTree,
+    ],
   );
 
   if (!level || !currentTree || !targetTree) {
@@ -113,7 +192,7 @@ export default function GameScreen({ levelId }) {
             That level is not available in this build.
           </Text>
           <Pressable
-            onPress={() => router.back()}
+            onPress={handleBackToLevels}
             style={[styles.primaryButton, { backgroundColor: colors.primary }]}
           >
             <Text style={styles.primaryButtonText}>Back to levels</Text>
@@ -130,19 +209,43 @@ export default function GameScreen({ levelId }) {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to levels"
-            onPress={() => router.back()}
+            onPress={handleBackToLevels}
             hitSlop={10}
-            style={styles.backButton}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.backButtonPressed,
+            ]}
           >
             <Text style={[styles.backText, { color: colors.primary }]}>‹  Levels</Text>
           </Pressable>
-          <Text style={[styles.moveCounter, { color: colors.muted }]}>MOVES {moveCount}</Text>
+          <Text style={[styles.moveCounter, { color: colors.muted }]}>
+            MOVES {moveCount}{moveLimit ? ` / ${moveLimit}` : ''}
+          </Text>
         </View>
 
+        {chapter ? (
+          <Text style={[styles.chapterEyebrow, { color: colors.primary }]}>
+            CHAPTER {String(GAME_CHAPTERS.indexOf(chapter) + 1).padStart(2, '0')} · {chapter.title}
+          </Text>
+        ) : null}
         <Text style={[styles.title, { color: colors.ink }]}>{level.name}</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Make your tree match the target.
+          {chapter?.moveLimitMode === 'per-level'
+            ? chapter.description
+            : 'Make your tree match the target.'}
         </Text>
+        {moveLimit ? (
+          <View
+            style={[
+              styles.moveLimitCard,
+              { backgroundColor: colors.palePrimary, borderColor: colors.cardBorder },
+            ]}
+          >
+            <Text style={[styles.moveLimitText, { color: colors.primary }]}>
+              {Math.max(0, moveLimit - moveCount)} moves remaining · {moveLimit} total
+            </Text>
+          </View>
+        ) : null}
 
         <View
           style={[
@@ -195,7 +298,10 @@ export default function GameScreen({ levelId }) {
               disabled: specialMoves === 0,
             }}
             disabled={specialMoves === 0}
-            onPress={() => setIsSpecialMoveActive((active) => !active)}
+            onPress={() => {
+              playTapSound();
+              setIsSpecialMoveActive((active) => !active);
+            }}
             style={[
               styles.toggle,
               { backgroundColor: isSpecialMoveActive ? colors.primary : '#D5DDD6' },
@@ -221,7 +327,7 @@ export default function GameScreen({ levelId }) {
         animationType="fade"
         onRequestClose={handleGoHome}
         transparent
-        visible={isCompletionVisible}
+        visible={isCompletionVisible || isOutOfMovesVisible}
       >
         <View style={styles.completionBackdrop}>
           <View
@@ -238,11 +344,23 @@ export default function GameScreen({ levelId }) {
                 { backgroundColor: colors.palePrimary },
               ]}
             >
-              <Text style={[styles.completionMarkText, { color: colors.primary }]}>✓</Text>
+              <Text style={[styles.completionMarkText, { color: colors.primary }]}>
+                {isOutOfMovesVisible ? '↻' : '✓'}
+              </Text>
             </View>
-            <Text style={[styles.completionTitle, { color: colors.ink }]}>Level complete!</Text>
+            <Text style={[styles.completionTitle, { color: colors.ink }]}>
+              {isOutOfMovesVisible
+                ? 'Out of moves!'
+                : isChapterCompletionVisible
+                  ? 'Chapter complete!'
+                  : 'Level complete!'}
+            </Text>
             <Text style={[styles.completionMessage, { color: colors.muted }]}>
-              You matched the tree in {moveCount} {moveCount === 1 ? 'move' : 'moves'}.
+              {isOutOfMovesVisible
+                ? 'Your move limit ran out before the trees matched. Try a different strategy.'
+                : isChapterCompletionVisible
+                  ? `Congratulations! You completed ${chapter.title}.${nextChapter ? ` ${nextChapter.title} is ready when you are.` : ' You have completed every chapter.'}`
+                  : `You matched the tree in ${moveCount} ${moveCount === 1 ? 'move' : 'moves'}.`}
             </Text>
             {isNewBestScore && (
               <View
@@ -261,7 +379,19 @@ export default function GameScreen({ levelId }) {
                 Progress could not be saved: {completionSaveError}
               </Text>
             ) : null}
-            {nextLevel ? (
+            {isOutOfMovesVisible ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={handleRetryLevel}
+                style={({ pressed }) => [
+                  styles.completionPrimaryButton,
+                  { backgroundColor: colors.primary },
+                  pressed && styles.pressedButton,
+                ]}
+              >
+                <Text style={styles.primaryButtonText}>Retry Level</Text>
+              </Pressable>
+            ) : nextLevel ? (
               <Pressable
                 accessibilityRole="button"
                 onPress={handleNextLevel}
@@ -271,21 +401,28 @@ export default function GameScreen({ levelId }) {
                   pressed && styles.pressedButton,
                 ]}
               >
-                <Text style={styles.primaryButtonText}>Go to Next Level</Text>
+                <Text style={styles.primaryButtonText}>
+                  {isChapterCompletionVisible
+                    ? `Continue to ${nextChapter.title}`
+                    : 'Go to Next Level'}
+                </Text>
               </Pressable>
             ) : null}
             <Pressable
               accessibilityRole="button"
               onPress={handleGoHome}
               style={({ pressed }) => [
-                nextLevel ? styles.homeButton : styles.completionPrimaryButton,
-                { backgroundColor: nextLevel ? colors.palePrimary : colors.primary },
+                nextLevel && !isOutOfMovesVisible ? styles.homeButton : styles.completionPrimaryButton,
+                {
+                  backgroundColor:
+                    nextLevel && !isOutOfMovesVisible ? colors.palePrimary : colors.primary,
+                },
                 pressed && styles.pressedButton,
               ]}
             >
               <Text
                 style={
-                  nextLevel
+                  nextLevel && !isOutOfMovesVisible
                     ? [styles.homeButtonText, { color: colors.primary }]
                     : styles.primaryButtonText
                 }
@@ -315,7 +452,16 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   backButton: {
+    alignItems: 'center',
+    borderRadius: 12,
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 88,
+    paddingHorizontal: 10,
     paddingVertical: 8,
+  },
+  backButtonPressed: {
+    opacity: 0.7,
   },
   backText: {
     fontSize: 15,
@@ -331,10 +477,29 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 12,
   },
+  chapterEyebrow: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginTop: 16,
+  },
   subtitle: {
     fontSize: 14,
     marginBottom: 18,
     marginTop: 4,
+  },
+  moveLimitCard: {
+    alignSelf: 'flex-start',
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 14,
+    marginTop: -8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  moveLimitText: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   panel: {
     borderRadius: 18,

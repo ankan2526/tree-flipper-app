@@ -53,7 +53,25 @@ test('local UI API creates, edits, and deletes levels safely', async (t) => {
   let result = await response.json();
   assert.equal(response.status, 200);
   assert.deepEqual(result.levels, []);
+  assert.deepEqual(
+    result.chapters.map(({ id }) => id),
+    ['chapter-1', 'chapter-2'],
+  );
   const originalRevision = result.revision;
+
+  response = await fetch(`${baseUrl}/api/levels`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Level-Manager-Token': token,
+    },
+    body: JSON.stringify({
+      level: { ...sampleLevel, chapterId: 'chapter-2' },
+      revision: originalRevision,
+    }),
+  });
+  assert.equal(response.status, 400);
+  assert.equal(fs.readFileSync(levelsPath, 'utf8'), 'export const GAME_LEVELS = [];\n');
 
   response = await fetch(`${baseUrl}/api/levels`, {
     method: 'POST',
@@ -65,7 +83,36 @@ test('local UI API creates, edits, and deletes levels safely', async (t) => {
   });
   result = await response.json();
   assert.equal(response.status, 200);
-  assert.deepEqual(JSON.parse(JSON.stringify(result.levels)), [sampleLevel]);
+  const chapterOneLevel = { ...sampleLevel, chapterId: 'chapter-1' };
+  assert.deepEqual(JSON.parse(JSON.stringify(result.levels)), [chapterOneLevel]);
+
+  response = await fetch(`${baseUrl}/api/levels`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Level-Manager-Token': token,
+    },
+    body: JSON.stringify({
+      level: { ...sampleLevel, id: 'level-chapter-two', chapterId: 'chapter-2', moveLimit: 3 },
+      revision: result.revision,
+    }),
+  });
+  result = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(result.levels[1].chapterId, 'chapter-2');
+  assert.equal(result.levels[1].moveLimit, 3);
+
+  response = await fetch(`${baseUrl}/api/levels/level-chapter-two`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Level-Manager-Token': token,
+    },
+    body: JSON.stringify({ revision: result.revision }),
+  });
+  result = await response.json();
+  assert.equal(response.status, 200);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.levels)), [chapterOneLevel]);
 
   const editedLevel = { ...sampleLevel, name: 'Edited Test Level' };
   response = await fetch(`${baseUrl}/api/levels/level-test`, {

@@ -16,6 +16,7 @@ const {
 const MAX_BODY_BYTES = 1024 * 1024;
 const DEFAULT_PORT = 4173;
 const HTML_PATH = path.join(__dirname, 'level-manager.html');
+const DEFAULT_CHAPTERS_PATH = path.resolve(__dirname, '../src/data/chapters.json');
 
 class RequestError extends Error {
   constructor(status, message) {
@@ -57,6 +58,53 @@ function validateInputLevel(level, index) {
   }
 }
 
+function readChapters(filePath) {
+  let chapters;
+  try {
+    chapters = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    throw new RequestError(500, `Cannot read chapters: ${error.message}`);
+  }
+  if (!Array.isArray(chapters) || chapters.length === 0) {
+    throw new RequestError(500, 'Chapter data must be a non-empty array.');
+  }
+  const ids = new Set();
+  for (const chapter of chapters) {
+    if (
+      !chapter ||
+      typeof chapter.id !== 'string' ||
+      !chapter.id ||
+      typeof chapter.title !== 'string' ||
+      !chapter.title.trim() ||
+      !['none', 'per-level'].includes(chapter.moveLimitMode)
+    ) {
+      throw new RequestError(500, 'Chapter data contains an invalid entry.');
+    }
+    if (ids.has(chapter.id)) {
+      throw new RequestError(500, `Duplicate chapter ID "${chapter.id}".`);
+    }
+    ids.add(chapter.id);
+  }
+  return chapters;
+}
+
+function validateChapterAssignment(level, index, chapters) {
+  validateInputLevel(level, index);
+  const chapterId = level.chapterId ?? chapters[0].id;
+  const chapter = chapters.find((item) => item.id === chapterId);
+  if (!chapter) {
+    throw new RequestError(400, `Chapter "${chapterId}" does not exist.`);
+  }
+  if (chapter.moveLimitMode === 'per-level') {
+    if (!Number.isInteger(level.moveLimit) || level.moveLimit < 1) {
+      throw new RequestError(400, 'This chapter requires a positive whole-number move limit.');
+    }
+  } else if (level.moveLimit !== undefined) {
+    throw new RequestError(400, 'This chapter does not use a move limit.');
+  }
+  return { ...level, chapterId };
+}
+
 function getRevision(source) {
   return crypto.createHash('sha256').update(source).digest('hex');
 }
@@ -79,20 +127,20 @@ function persistLevels(filePath, source, levels) {
   return replacement;
 }
 
-function createLevel(filePath, body) {
+function createLevel(filePath, body, chapters) {
   const source = readSource(filePath);
   requireRevision(body, source);
   const levels = getLevels(source);
-  validateInputLevel(body.level, levels.length);
-  if (levels.some(({ id }) => id === body.level.id)) {
+  const level = validateChapterAssignment(body.level, levels.length, chapters);
+  if (levels.some(({ id }) => id === level.id)) {
     throw new RequestError(409, `A level with ID "${body.level.id}" already exists.`);
   }
-  levels.push(body.level);
+  levels.push(level);
   const updatedSource = persistLevels(filePath, source, levels);
   return { levels, revision: getRevision(updatedSource) };
 }
 
-function updateLevel(filePath, originalId, body) {
+function updateLevel(filePath, originalId, body, chapters) {
   const source = readSource(filePath);
   requireRevision(body, source);
   const levels = getLevels(source);
@@ -100,11 +148,11 @@ function updateLevel(filePath, originalId, body) {
   if (index === -1) {
     throw new RequestError(404, `Level "${originalId}" was not found.`);
   }
-  validateInputLevel(body.level, index);
-  if (levels.some(({ id }, otherIndex) => otherIndex !== index && id === body.level.id)) {
+  const level = validateChapterAssignment(body.level, index, chapters);
+  if (levels.some(({ id }, otherIndex) => otherIndex !== index && id === level.id)) {
     throw new RequestError(409, `A level with ID "${body.level.id}" already exists.`);
   }
-  levels[index] = body.level;
+  levels[index] = level;
   const updatedSource = persistLevels(filePath, source, levels);
   return { levels, revision: getRevision(updatedSource) };
 }
@@ -174,6 +222,7 @@ function safeTokenEqual(candidate, expected) {
 
 function createLevelManagerServer({
   levelsPath = path.resolve(__dirname, '../src/data/levels.js'),
+  chaptersPath = DEFAULT_CHAPTERS_PATH,
   port = DEFAULT_PORT,
 } = {}) {
   const token = crypto.randomBytes(32).toString('hex');
@@ -204,7 +253,24 @@ function createLevelManagerServer({
     try {
       if (request.method === 'GET' && url.pathname === '/api/levels') {
         const source = readSource(levelsPath);
-        sendJson(response, 200, { levels: getLevels(source), revision: getRevision(source) });
+        const chapters = readChapters(chaptersPath);
+        const defaultChapterId = chapters[0].id;
+        const levels = getLevels(source).map((level, index) => {
+          try {
+            return validateChapterAssignment(
+              { ...level, chapterId: level.chapterId ?? defaultChapterId },
+              index,
+              chapters,
+            );
+          } catch (error) {
+            throw new RequestError(500, `Cannot use levels.js: ${error.message}`);
+          }
+        });
+        sendJson(response, 200, {
+          chapters,
+          levels,
+          revision: getRevision(source),
+        });
         return;
       }
 
@@ -224,9 +290,10 @@ function createLevelManagerServer({
       }
 
       const body = await readJsonBody(request);
+      const chapters = readChapters(chaptersPath);
       let result;
       if (createRoute) {
-        result = createLevel(levelsPath, body);
+        result = createLevel(levelsPath, body, chapters);
       } else {
         let id;
         try {
@@ -235,7 +302,7 @@ function createLevelManagerServer({
           throw new RequestError(400, 'Invalid level ID in request path.');
         }
         if (request.method === 'PUT') {
-          result = updateLevel(levelsPath, id, body);
+          result = updateLevel(levelsPath, id, body, chapters);
         } else if (request.method === 'DELETE') {
           result = deleteLevel(levelsPath, id, body);
         }

@@ -6,11 +6,13 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
 import { router } from 'expo-router';
 import { THEMES, ThemeName, useAppTheme } from '@/context/ThemeContext';
+import { useAudio } from '@/context/AudioContext';
 import { resetAllProgress } from '@/utils/storage';
 
 interface SettingsModalProps {
@@ -25,6 +27,15 @@ export default function SettingsModal({
   onProgressReset,
 }: SettingsModalProps) {
   const { colors, themeName, setTheme } = useAppTheme();
+  const {
+    sfxEnabled,
+    musicEnabled,
+    hapticsEnabled,
+    toggleSfx,
+    toggleMusic,
+    toggleHaptics,
+    playTapSound,
+  } = useAudio();
 
   const handleResetProgress = () => {
     Alert.alert(
@@ -83,6 +94,83 @@ export default function SettingsModal({
         </View>
 
         <ScrollView contentContainerStyle={styles.content}>
+          {/* AUDIO & HAPTICS SECTION */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]}>AUDIO & HAPTICS</Text>
+            <View
+              style={[
+                styles.card,
+                { backgroundColor: colors.card, borderColor: colors.cardBorder },
+              ]}
+            >
+              <View
+                style={[
+                  styles.toggleRow,
+                  styles.themeRowBorder,
+                  { borderBottomColor: colors.cardBorder },
+                ]}
+              >
+                <View>
+                  <Text style={[styles.settingLabel, { color: colors.ink }]}>Sound Effects</Text>
+                  <Text style={[styles.settingDescription, { color: colors.muted }]}>
+                    Chimes, flips, & victory blooms
+                  </Text>
+                </View>
+                <Switch
+                  value={sfxEnabled}
+                  onValueChange={() => {
+                    toggleSfx();
+                    playTapSound();
+                  }}
+                  trackColor={{ false: colors.cardBorder, true: colors.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              <View
+                style={[
+                  styles.toggleRow,
+                  styles.themeRowBorder,
+                  { borderBottomColor: colors.cardBorder },
+                ]}
+              >
+                <View>
+                  <Text style={[styles.settingLabel, { color: colors.ink }]}>Ambient Music</Text>
+                  <Text style={[styles.settingDescription, { color: colors.muted }]}>
+                    Hypnotic synth soundscape
+                  </Text>
+                </View>
+                <Switch
+                  value={musicEnabled}
+                  onValueChange={() => {
+                    toggleMusic();
+                    playTapSound();
+                  }}
+                  trackColor={{ false: colors.cardBorder, true: colors.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+
+              <View style={styles.toggleRow}>
+                <View>
+                  <Text style={[styles.settingLabel, { color: colors.ink }]}>Haptics</Text>
+                  <Text style={[styles.settingDescription, { color: colors.muted }]}>
+                    Tactile vibrational response
+                  </Text>
+                </View>
+                <Switch
+                  value={hapticsEnabled}
+                  onValueChange={() => {
+                    toggleHaptics();
+                    playTapSound();
+                  }}
+                  trackColor={{ false: colors.cardBorder, true: colors.primary }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+            </View>
+          </View>
+
           {/* THEMES SECTION */}
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.muted }]}>THEME</Text>
@@ -266,6 +354,21 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  toggleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  settingDescription: {
+    fontSize: 12,
+    marginTop: 2,
   },
   themeRowBorder: {
     borderBottomWidth: 1,

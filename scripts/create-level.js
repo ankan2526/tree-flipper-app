@@ -67,6 +67,18 @@ class LevelsSourceParser {
       return;
     }
 
+    const numberMatch = source.slice(start).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
+    if (numberMatch) {
+      this.index += numberMatch[0].length;
+      this.token = {
+        type: 'number',
+        value: Number(numberMatch[0]),
+        start,
+        end: this.index,
+      };
+      return;
+    }
+
     if (/[A-Za-z_$]/.test(character)) {
       this.index += 1;
       while (this.index < source.length && /[\w$]/.test(source[this.index])) {
@@ -149,6 +161,11 @@ class LevelsSourceParser {
 
   parseValue() {
     if (this.token.type === 'string') {
+      const value = this.token.value;
+      this.next();
+      return value;
+    }
+    if (this.token.type === 'number') {
       const value = this.token.value;
       this.next();
       return value;
@@ -250,10 +267,30 @@ function validateId(value, context) {
 
 function validateLevel(level, index = 0) {
   const context = `Level ${index + 1}`;
-  requireExactKeys(level, ['id', 'name', 'tree'], context);
+  if (!level || typeof level !== 'object' || Array.isArray(level)) {
+    throw new Error(`${context} must be an object.`);
+  }
+  const allowedKeys = ['id', 'name', 'tree', 'chapterId', 'moveLimit'];
+  const actualKeys = Object.keys(level);
+  const unknownKeys = actualKeys.filter((key) => !allowedKeys.includes(key));
+  const missingKeys = ['id', 'name', 'tree'].filter((key) => !actualKeys.includes(key));
+  if (unknownKeys.length || missingKeys.length) {
+    throw new Error(
+      `${context} must contain exactly id, name, and tree, with optional chapterId and moveLimit.`,
+    );
+  }
   validateId(level.id, `${context} ID`);
   if (typeof level.name !== 'string' || !level.name.trim()) {
     throw new Error(`${context} name must be a non-empty string.`);
+  }
+  if (level.chapterId !== undefined) {
+    validateId(level.chapterId, `${context} chapter ID`);
+  }
+  if (
+    level.moveLimit !== undefined &&
+    (!Number.isInteger(level.moveLimit) || level.moveLimit < 1)
+  ) {
+    throw new Error(`${context} move limit must be a positive whole number.`);
   }
 
   const nodeIds = new Set();

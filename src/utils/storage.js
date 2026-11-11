@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const COMPLETED_LEVELS_KEY = '@tree-flipper/completed-levels';
 const BEST_SCORES_KEY = '@tree-flipper/best-scores';
 const THEME_KEY = '@tree-flipper/theme';
+const SOUND_SETTINGS_KEY = '@tree-flipper/sound-settings';
 
 export async function getCompletedLevels() {
   const storedValue = await AsyncStorage.getItem(COMPLETED_LEVELS_KEY);
@@ -85,4 +86,26 @@ export async function saveThemeSetting(themeKey) {
 
 export async function resetAllProgress() {
   await AsyncStorage.multiRemove([COMPLETED_LEVELS_KEY, BEST_SCORES_KEY]);
+}
+
+export async function getSoundSettings() {
+  const val = await AsyncStorage.getItem(SOUND_SETTINGS_KEY);
+  if (!val) {
+    return { sfxEnabled: true, musicEnabled: true, hapticsEnabled: true };
+  }
+  try {
+    const parsed = JSON.parse(val);
+    return {
+      sfxEnabled: parsed.sfxEnabled ?? true,
+      musicEnabled: parsed.musicEnabled ?? true,
+      hapticsEnabled: parsed.hapticsEnabled ?? true,
+    };
+  } catch {
+    return { sfxEnabled: true, musicEnabled: true, hapticsEnabled: true };
+  }
+}
+
+export async function saveSoundSettings(settings) {
+  await AsyncStorage.setItem(SOUND_SETTINGS_KEY, JSON.stringify(settings));
+  return settings;
 }

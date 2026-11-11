@@ -678,6 +678,17 @@ export const GAME_LEVELS = [
                       "children": []
                     }
                   ]
+                },
+                {
+                  "id": "node-9",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-10",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
                 }
               ]
             }
@@ -791,5 +802,382 @@ export const GAME_LEVELS = [
         }
       ]
     }
+  },
+  {
+    "id": "level-19",
+    "name": "Even or Odd?",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "node-4",
+              "targetColor": "red",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "node-5",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-8",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-9",
+                  "targetColor": "red",
+                  "children": []
+                },
+                {
+                  "id": "node-10",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-12",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-6",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-7",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-13",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "node-11",
+              "targetColor": "red",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "level-20",
+    "name": "Red Light, Blue Light",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-4",
+              "targetColor": "red",
+              "children": []
+            },
+            {
+              "id": "node-7",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "node-2",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-6",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-9",
+                  "targetColor": "red",
+                  "children": []
+                },
+                {
+                  "id": "node-10",
+                  "targetColor": "blue",
+                  "children": []
+                },
+                {
+                  "id": "node-11",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-3",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-5",
+              "targetColor": "blue",
+              "children": []
+            },
+            {
+              "id": "node-8",
+              "targetColor": "red",
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "level-21",
+    "name": "A Tight Squeeze",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "left",
+          "targetColor": "red",
+          "children": []
+        },
+        {
+          "id": "right",
+          "targetColor": "blue",
+          "children": []
+        }
+      ]
+    },
+    "moveLimit": 2
+  },
+  {
+    "id": "level-22",
+    "name": "Branching Deadline",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "left",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "left-left",
+              "targetColor": "red",
+              "children": []
+            },
+            {
+              "id": "left-right",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "right",
+          "targetColor": "blue",
+          "children": []
+        }
+      ]
+    },
+    "moveLimit": 3
+  },
+  {
+    "id": "level-23",
+    "name": "One Last Flip - Easy",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "left",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "left-left",
+              "targetColor": "blue",
+              "children": []
+            },
+            {
+              "id": "left-right",
+              "targetColor": "red",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "right",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "right-left",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 4
+  },
+  {
+    "id": "level-24",
+    "name": "One Last Flip - Hard",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-3",
+              "targetColor": "blue",
+              "children": []
+            },
+            {
+              "id": "node-4",
+              "targetColor": "red",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "node-2",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-5",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 3
+  },
+  {
+    "id": "level-25",
+    "name": "Line 3",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-4",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-5",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 2
+  },
+  {
+    "id": "level-26",
+    "name": "Late Branch",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-4",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-6",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "node-5",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-7",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 2
   }
 ];
