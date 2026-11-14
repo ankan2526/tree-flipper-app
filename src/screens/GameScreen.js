@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { router } from 'expo-router';
@@ -32,6 +33,7 @@ function createAllRedTree(node) {
 
 export default function GameScreen({ levelId }) {
   const { colors } = useAppTheme();
+  const { width: windowWidth } = useWindowDimensions();
   const {
     playFlipSound,
     playSpecialSound,
@@ -52,6 +54,9 @@ export default function GameScreen({ levelId }) {
   const [targetTree] = useState(() => level?.tree ?? null);
   const [specialMoves, setSpecialMoves] = useState(3);
   const [isSpecialMoveActive, setIsSpecialMoveActive] = useState(false);
+  const [isSpecialInfoVisible, setIsSpecialInfoVisible] = useState(false);
+  const [specialInfoAnchor, setSpecialInfoAnchor] = useState(null);
+  const specialInfoLinkRef = useRef(null);
   const [moveCount, setMoveCount] = useState(0);
   const [isCompletionVisible, setIsCompletionVisible] = useState(false);
   const [isChapterCompletionVisible, setIsChapterCompletionVisible] = useState(false);
@@ -202,6 +207,8 @@ export default function GameScreen({ levelId }) {
     );
   }
 
+  const specialInfoCardWidth = Math.min(300, Math.max(0, windowWidth - 32));
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -218,9 +225,6 @@ export default function GameScreen({ levelId }) {
           >
             <Text style={[styles.backText, { color: colors.primary }]}>‹  Levels</Text>
           </Pressable>
-          <Text style={[styles.moveCounter, { color: colors.muted }]}>
-            MOVES {moveCount}{moveLimit ? ` / ${moveLimit}` : ''}
-          </Text>
         </View>
 
         {chapter ? (
@@ -234,19 +238,6 @@ export default function GameScreen({ levelId }) {
             ? chapter.description
             : 'Make your tree match the target.'}
         </Text>
-        {moveLimit ? (
-          <View
-            style={[
-              styles.moveLimitCard,
-              { backgroundColor: colors.palePrimary, borderColor: colors.cardBorder },
-            ]}
-          >
-            <Text style={[styles.moveLimitText, { color: colors.primary }]}>
-              {Math.max(0, moveLimit - moveCount)} moves remaining · {moveLimit} total
-            </Text>
-          </View>
-        ) : null}
-
         <View
           style={[
             styles.panel,
@@ -257,7 +248,7 @@ export default function GameScreen({ levelId }) {
             <Text style={[styles.panelTitle, { color: colors.ink }]}>TARGET TREE</Text>
             <Text style={[styles.readOnly, { color: colors.muted }]}>READ ONLY</Text>
           </View>
-          <TreeRenderer tree={targetTree} scale={0.58} />
+          <TreeRenderer tree={targetTree} scale={0.58} fitToWidth />
         </View>
 
         <View
@@ -271,57 +262,134 @@ export default function GameScreen({ levelId }) {
           ]}
         >
           <View style={styles.panelHeading}>
-            <Text style={[styles.panelTitle, { color: colors.ink }]}>YOUR TREE</Text>
-            <Text style={[styles.tapHint, { color: colors.muted }]}>
-              TAP A NODE TO FLIP ITS BRANCH
-            </Text>
+            {moveLimit ? (
+              <View
+                accessibilityLabel={`${Math.max(0, moveLimit - moveCount)} moves remaining out of ${moveLimit}`}
+                style={[
+                  styles.moveLimitCard,
+                  { backgroundColor: colors.palePrimary, borderColor: colors.cardBorder },
+                ]}
+              >
+                <Text style={[styles.moveLimitLabel, { color: colors.muted }]}>MOVES LEFT</Text>
+                <Text style={[styles.moveLimitText, { color: colors.primary }]}>
+                  {Math.max(0, moveLimit - moveCount)}
+                </Text>
+                <Text style={[styles.moveLimitTotal, { color: colors.muted }]}>of {moveLimit}</Text>
+              </View>
+            ) : <View style={styles.panelHeadingSpacer} />}
+            <View style={styles.specialControl}>
+              <Text style={[styles.movesRemaining, { color: colors.accent }]}>
+                {specialMoves} left
+              </Text>
+              <View style={styles.specialToggleColumn}>
+                <Pressable
+                  accessibilityRole="switch"
+                  accessibilityLabel="Special move"
+                  accessibilityState={{
+                    checked: isSpecialMoveActive,
+                    disabled: specialMoves === 0,
+                  }}
+                  disabled={specialMoves === 0}
+                  onPress={() => {
+                    playTapSound();
+                    setIsSpecialMoveActive((active) => !active);
+                  }}
+                  style={[
+                    styles.toggle,
+                    { backgroundColor: isSpecialMoveActive ? colors.primary : '#D5DDD6' },
+                    specialMoves === 0 && styles.toggleDisabled,
+                  ]}
+                >
+                  <View style={[styles.toggleKnob, isSpecialMoveActive && styles.toggleKnobActive]} />
+                </Pressable>
+                <Pressable
+                  ref={specialInfoLinkRef}
+                  accessibilityRole="button"
+                  accessibilityLabel="Special move information"
+                  onPress={() => {
+                    playTapSound();
+                    if (isSpecialInfoVisible) {
+                      setIsSpecialInfoVisible(false);
+                      return;
+                    }
+                    specialInfoLinkRef.current?.measureInWindow((x, y, width, height) => {
+                      setSpecialInfoAnchor({ x, y, width, height });
+                      setIsSpecialInfoVisible(true);
+                    });
+                  }}
+                  hitSlop={8}
+                  style={styles.specialInfoLink}
+                >
+                  <Text style={[styles.specialInfoLinkText, { color: colors.primary }]}>Special </Text>
+                  <Text style={[styles.specialInfoLinkText, styles.specialInfoLinkIcon, { color: colors.primary }]}>ⓘ</Text>
+                </Pressable>
+              </View>
+            </View>
           </View>
-          <TreeRenderer tree={currentTree} onNodePress={handleNodePress} />
+          <TreeRenderer
+            tree={currentTree}
+            onNodePress={handleNodePress}
+            fitToWidth
+          />
         </View>
+      </ScrollView>
 
-        <View
-          style={[
-            styles.specialCard,
-            { backgroundColor: colors.palePrimary, borderColor: colors.cardBorder },
-          ]}
-        >
-          <View style={styles.specialCopy}>
-            <Text style={[styles.specialTitle, { color: colors.ink }]}>Special Move</Text>
-            <Text style={[styles.specialDescription, { color: colors.muted }]}>
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isSpecialInfoVisible}
+        onRequestClose={() => setIsSpecialInfoVisible(false)}
+      >
+        <View style={styles.specialInfoModalRoot}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss special move information"
+            onPress={() => setIsSpecialInfoVisible(false)}
+            style={StyleSheet.absoluteFill}
+          />
+          <View
+            accessibilityViewIsModal
+            style={[
+              styles.specialInfoPopover,
+              {
+                backgroundColor: colors.palePrimary,
+                borderColor: colors.primary,
+                left: specialInfoAnchor
+                  ? Math.max(
+                      16,
+                      Math.min(
+                        specialInfoAnchor.x + specialInfoAnchor.width - specialInfoCardWidth,
+                        windowWidth - specialInfoCardWidth - 16,
+                      ),
+                    )
+                  : 16,
+                top: specialInfoAnchor
+                  ? specialInfoAnchor.y >= 90
+                    ? specialInfoAnchor.y - 72
+                    : specialInfoAnchor.y + specialInfoAnchor.height + 8
+                  : 112,
+                width: specialInfoCardWidth,
+              },
+            ]}
+          >
+            <View style={styles.specialInfoPopoverHeader}>
+              <Text style={[styles.specialInfoPopoverTitle, { color: colors.primary }]}>Special Move:</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close special move information"
+                onPress={() => setIsSpecialInfoVisible(false)}
+                hitSlop={8}
+                style={styles.specialInfoCloseButton}
+              >
+                <Text style={[styles.specialInfoCloseText, { color: colors.ink }]}>×</Text>
+              </Pressable>
+            </View>
+            <Text style={[styles.specialInfoPopoverText, { color: colors.ink }]}>
               Flip one node without changing its descendants.
             </Text>
           </View>
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{
-              checked: isSpecialMoveActive,
-              disabled: specialMoves === 0,
-            }}
-            disabled={specialMoves === 0}
-            onPress={() => {
-              playTapSound();
-              setIsSpecialMoveActive((active) => !active);
-            }}
-            style={[
-              styles.toggle,
-              { backgroundColor: isSpecialMoveActive ? colors.primary : '#D5DDD6' },
-              specialMoves === 0 && styles.toggleDisabled,
-            ]}
-          >
-            <View style={[styles.toggleKnob, isSpecialMoveActive && styles.toggleKnobActive]} />
-          </Pressable>
-          <Text style={[styles.movesRemaining, { color: colors.accent }]}>
-            {specialMoves} remaining
-          </Text>
-          <Text style={[styles.specialStatus, { color: colors.muted }]}>
-            {specialMoves === 0
-              ? 'No special moves left'
-              : isSpecialMoveActive
-                ? 'Special Move Active'
-                : 'Special Move Inactive'}
-          </Text>
         </View>
-      </ScrollView>
+      </Modal>
 
       <Modal
         animationType="fade"
@@ -467,11 +535,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  moveCounter: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
   title: {
     fontSize: 30,
     fontWeight: '800',
@@ -490,16 +553,28 @@ const styles = StyleSheet.create({
   },
   moveLimitCard: {
     alignSelf: 'flex-start',
-    borderRadius: 14,
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+    borderRadius: 12,
     borderWidth: 1,
-    marginBottom: 14,
-    marginTop: -8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    marginHorizontal: 4,
+    marginTop: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  moveLimitLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.6,
   },
   moveLimitText: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
+  },
+  moveLimitTotal: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   panel: {
     borderRadius: 18,
@@ -516,42 +591,78 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingTop: 14,
   },
-  panelTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
+  panelHeadingSpacer: {
+    flex: 1,
   },
   readOnly: {
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 0.7,
   },
-  tapHint: {
-    fontSize: 8,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  specialCard: {
+  specialControl: {
     alignItems: 'center',
-    borderRadius: 16,
-    borderWidth: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 2,
-    padding: 14,
+    gap: 8,
   },
-  specialCopy: {
+  specialToggleColumn: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  specialInfoLink: {
+    flexDirection: 'row',
+    minHeight: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  specialInfoLinkText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  specialInfoLinkIcon: {
+    fontSize: 13,
+    lineHeight: 15,
+  },
+  specialInfoModalRoot: {
     flex: 1,
-    paddingRight: 10,
+    backgroundColor: 'transparent',
+    position: 'relative',
   },
-  specialTitle: {
-    fontSize: 15,
+  specialInfoPopover: {
+    position: 'absolute',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+  },
+  specialInfoPopoverHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  specialInfoPopoverText: {
+    fontSize: 13,
+    lineHeight: 18,
+    paddingRight: 8,
+  },
+  specialInfoPopoverTitle: {
+    fontSize: 13,
     fontWeight: '800',
   },
-  specialDescription: {
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: 3,
+  specialInfoCloseButton: {
+    alignItems: 'center',
+    height: 26,
+    justifyContent: 'center',
+    marginRight: -6,
+    marginTop: -4,
+    width: 26,
+  },
+  specialInfoCloseText: {
+    fontSize: 23,
+    lineHeight: 25,
   },
   toggle: {
     borderRadius: 15,
@@ -573,14 +684,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   movesRemaining: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '800',
-    marginLeft: 8,
-  },
-  specialStatus: {
-    flexBasis: '100%',
-    fontSize: 11,
-    marginTop: 8,
   },
   missingLevel: {
     alignItems: 'center',

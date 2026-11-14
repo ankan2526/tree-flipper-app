@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -83,8 +83,10 @@ export default function TreeRenderer({
   onNodePress,
   scale = 1,
   selectedNodeId,
+  fitToWidth = false,
 }) {
   const { colors } = useAppTheme();
+  const [viewportWidth, setViewportWidth] = useState(0);
   const layout = useMemo(
     () => (tree ? createLayout(tree) : null),
     [tree],
@@ -99,8 +101,12 @@ export default function TreeRenderer({
     blue: colors.nodeBlue,
   };
 
-  const renderedWidth = layout.width * scale;
-  const renderedHeight = layout.height * scale;
+  const effectiveScale =
+    fitToWidth && viewportWidth > 0
+      ? Math.min(scale, viewportWidth / layout.width)
+      : scale;
+  const renderedWidth = layout.width * effectiveScale;
+  const renderedHeight = layout.height * effectiveScale;
 
   return (
     <View style={styles.container}>
@@ -108,6 +114,16 @@ export default function TreeRenderer({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        onLayout={
+          fitToWidth
+            ? ({ nativeEvent }) => {
+                const nextWidth = nativeEvent.layout.width;
+                setViewportWidth((currentWidth) =>
+                  Math.abs(currentWidth - nextWidth) < 1 ? currentWidth : nextWidth,
+                );
+              }
+            : undefined
+        }
       >
         <View
           style={{
@@ -158,11 +174,11 @@ export default function TreeRenderer({
                   style={[
                     styles.nodeHitTarget,
                     {
-                      left: (node.x - NODE_RADIUS) * scale,
-                      top: (node.y - NODE_RADIUS) * scale,
-                      width: NODE_RADIUS * 2 * scale,
-                      height: NODE_RADIUS * 2 * scale,
-                      borderRadius: NODE_RADIUS * scale,
+                      left: (node.x - NODE_RADIUS) * effectiveScale,
+                      top: (node.y - NODE_RADIUS) * effectiveScale,
+                      width: NODE_RADIUS * 2 * effectiveScale,
+                      height: NODE_RADIUS * 2 * effectiveScale,
+                      borderRadius: NODE_RADIUS * effectiveScale,
                     },
                   ]}
                 />
