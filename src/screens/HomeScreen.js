@@ -320,9 +320,7 @@ export default function HomeScreen() {
           <View>
             <View style={styles.heading}>
               <View style={styles.headerTopBar}>
-                <Text style={[styles.eyebrow, { color: colors.primary }]}>
-                  A LITTLE LOGIC, A LOT OF FLIPPING
-                </Text>
+                <Text style={[styles.title, { color: colors.ink }]}>Tree Flipper</Text>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Open settings"
@@ -336,20 +334,6 @@ export default function HomeScreen() {
                 >
                   <Text style={[styles.settingsIconText, { color: colors.primary }]}>⚙</Text>
                 </Pressable>
-              </View>
-              <Text style={[styles.title, { color: colors.ink }]}>Tree Flipper</Text>
-              <Text style={[styles.subtitle, { color: colors.muted }]}>
-                Match the colors. Think in branches.
-              </Text>
-              <View
-                style={[
-                  styles.progressPill,
-                  { backgroundColor: colors.palePrimary },
-                ]}
-              >
-                <Text style={[styles.progressText, { color: colors.primary }]}>
-                  {completedLevels.length} / {GAME_LEVELS.length} levels complete
-                </Text>
               </View>
             </View>
             <ScrollView
@@ -459,11 +443,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.4,
-  },
   settingsIconBtn: {
     width: 36,
     height: 36,
@@ -472,28 +451,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   settingsIconText: {
-    fontSize: 18,
-    lineHeight: 20,
+    fontSize: 22,
+    lineHeight: 24,
   },
   title: {
     fontSize: 38,
     fontWeight: '800',
-    marginTop: 7,
-  },
-  subtitle: {
-    fontSize: 15,
-    marginTop: 5,
-  },
-  progressPill: {
-    alignSelf: 'flex-start',
-    borderRadius: 18,
-    marginTop: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  progressText: {
-    fontSize: 12,
-    fontWeight: '700',
   },
   chapterNavigation: {
     gap: 10,

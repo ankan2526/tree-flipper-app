@@ -1179,5 +1179,676 @@ export const GAME_LEVELS = [
       ]
     },
     "moveLimit": 2
+  },
+  {
+    "id": "level-27",
+    "name": "Constraint 1",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-13",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "node-5",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-7",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-8",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-15",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "node-9",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-3",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-10",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-11",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-14",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "node-6",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-12",
+                  "targetColor": "blue",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 4
+  },
+  {
+    "id": "level-28",
+    "name": "Constraint 2",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "node-2",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-5",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-7",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-10",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-14",
+                          "targetColor": "red",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "node-11",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-15",
+                          "targetColor": "red",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "node-6",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-8",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-12",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-16",
+                          "targetColor": "red",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "node-13",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-17",
+                          "targetColor": "red",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-3",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-9",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 7
+  },
+  {
+    "id": "level-29",
+    "name": "Constraint 3",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-6",
+                  "targetColor": "blue",
+                  "children": []
+                },
+                {
+                  "id": "node-7",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-9",
+                      "targetColor": "blue",
+                      "children": []
+                    },
+                    {
+                      "id": "node-10",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-19",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "node-8",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-18",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-3",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-11",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-12",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-16",
+                          "targetColor": "blue",
+                          "children": []
+                        },
+                        {
+                          "id": "node-17",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "node-5",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-13",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-14",
+                      "targetColor": "blue",
+                      "children": []
+                    },
+                    {
+                      "id": "node-15",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 6
+  },
+  {
+    "id": "level-30",
+    "name": "Special - Easy",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "node-2",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-5",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-7",
+                  "targetColor": "red",
+                  "children": []
+                },
+                {
+                  "id": "node-8",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-3",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-6",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 5
+  },
+  {
+    "id": "level-31",
+    "name": "Special - Hard",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "node-2",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-5",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-6",
+                  "targetColor": "red",
+                  "children": []
+                },
+                {
+                  "id": "node-9",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-3",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-7",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 3
+  },
+  {
+    "id": "level-32",
+    "name": "Random 1",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-4",
+                      "targetColor": "blue",
+                      "children": []
+                    },
+                    {
+                      "id": "node-7",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "node-6",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-12",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-13",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-5",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-8",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-9",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-14",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "node-10",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-11",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 8
+  },
+  {
+    "id": "level-33",
+    "name": "Wide Tree",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": []
+        },
+        {
+          "id": "node-2",
+          "targetColor": "blue",
+          "children": []
+        },
+        {
+          "id": "node-3",
+          "targetColor": "red",
+          "children": []
+        },
+        {
+          "id": "node-4",
+          "targetColor": "red",
+          "children": []
+        },
+        {
+          "id": "node-5",
+          "targetColor": "blue",
+          "children": []
+        },
+        {
+          "id": "node-6",
+          "targetColor": "red",
+          "children": []
+        }
+      ]
+    },
+    "moveLimit": 3
+  },
+  {
+    "id": "level-34",
+    "name": "Random 2",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-4",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-15",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "node-9",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "node-8",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-10",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-11",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-5",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-6",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-7",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-12",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-13",
+                          "targetColor": "red",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "node-14",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-16",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 7
   }
 ];

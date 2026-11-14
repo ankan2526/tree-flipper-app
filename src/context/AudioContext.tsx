@@ -27,17 +27,17 @@ interface AudioContextValue {
 const AudioContext = createContext<AudioContextValue | null>(null);
 
 const FLIP_SOUND_ASSETS = [
-  require('@/../assets/audio/flip_1.m4a'),
-  require('@/../assets/audio/flip_2.m4a'),
-  require('@/../assets/audio/flip_3.m4a'),
-  require('@/../assets/audio/flip_4.m4a'),
-  require('@/../assets/audio/flip_5.m4a'),
+  require('@/../assets/audio/flip_1.wav'),
+  require('@/../assets/audio/flip_2.wav'),
+  require('@/../assets/audio/flip_3.wav'),
+  require('@/../assets/audio/flip_4.wav'),
+  require('@/../assets/audio/flip_5.wav'),
 ];
-const SPECIAL_SOUND_ASSET = require('@/../assets/audio/special.m4a');
-const VICTORY_SOUND_ASSET = require('@/../assets/audio/victory.m4a');
-const FAIL_SOUND_ASSET = require('@/../assets/audio/fail.m4a');
-const TAP_SOUND_ASSET = require('@/../assets/audio/tap.m4a');
-const BGM_ASSET = require('@/../assets/audio/ambient_bgm.m4a');
+const SPECIAL_SOUND_ASSET = require('@/../assets/audio/special.wav');
+const VICTORY_SOUND_ASSET = require('@/../assets/audio/victory.wav');
+const FAIL_SOUND_ASSET = require('@/../assets/audio/fail.wav');
+const TAP_SOUND_ASSET = require('@/../assets/audio/tap.wav');
+const BGM_ASSET = require('@/../assets/audio/ambient_bgm.wav');
 
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<SoundSettings>({
@@ -87,7 +87,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     try {
       const bgmPlayer = createAudioPlayer(BGM_ASSET);
       bgmPlayer.loop = true;
-      bgmPlayer.volume = 0.55;
+      bgmPlayer.volume = 0.9;
       bgmPlayerRef.current = bgmPlayer;
 
       if (settings.musicEnabled) {
