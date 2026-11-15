@@ -279,7 +279,7 @@ export default function GameScreen({ levelId }) {
             ) : <View style={styles.panelHeadingSpacer} />}
             <View style={styles.specialControl}>
               <Text style={[styles.movesRemaining, { color: colors.accent }]}>
-                {specialMoves} left
+                {Math.min(specialMoves, moveLimit - moveCount)} left
               </Text>
               <View style={styles.specialToggleColumn}>
                 <Pressable
