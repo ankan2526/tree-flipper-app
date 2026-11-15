@@ -1850,5 +1850,438 @@ export const GAME_LEVELS = [
       ]
     },
     "moveLimit": 7
+  },
+  {
+    "id": "level-35",
+    "name": "Line 4",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-4",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-5",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 3
+  },
+  {
+    "id": "level-36",
+    "name": "Line 5",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-4",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-5",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 3
+  },
+  {
+    "id": "level-37",
+    "name": "Choice",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-5",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "node-4",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-6",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 4
+  },
+  {
+    "id": "level-38",
+    "name": "Cascade",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-7",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-9",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "node-4",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-6",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "node-5",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-8",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-10",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 6
+  },
+  {
+    "id": "level-39",
+    "name": "Random 3",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-11",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-17",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-18",
+                      "targetColor": "red",
+                      "children": []
+                    },
+                    {
+                      "id": "node-19",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-20",
+                          "targetColor": "red",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "node-16",
+              "targetColor": "red",
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "node-2",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-5",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-10",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-12",
+                      "targetColor": "red",
+                      "children": []
+                    },
+                    {
+                      "id": "node-13",
+                      "targetColor": "blue",
+                      "children": []
+                    },
+                    {
+                      "id": "node-14",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-15",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-3",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-4",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-6",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-21",
+                      "targetColor": "blue",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "node-7",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-8",
+                  "targetColor": "red",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 11
+  },
+  {
+    "id": "level-40",
+    "name": "Brute Force",
+    "chapterId": "chapter-2",
+    "tree": {
+      "id": "root",
+      "targetColor": "blue",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-5",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-6",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-11",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "node-7",
+                  "targetColor": "red",
+                  "children": []
+                },
+                {
+                  "id": "node-8",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-12",
+                      "targetColor": "blue",
+                      "children": []
+                    },
+                    {
+                      "id": "node-13",
+                      "targetColor": "red",
+                      "children": [
+                        {
+                          "id": "node-17",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "node-9",
+                  "targetColor": "blue",
+                  "children": [
+                    {
+                      "id": "node-18",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-2",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-3",
+              "targetColor": "red",
+              "children": []
+            },
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": [
+                {
+                  "id": "node-10",
+                  "targetColor": "red",
+                  "children": [
+                    {
+                      "id": "node-14",
+                      "targetColor": "blue",
+                      "children": [
+                        {
+                          "id": "node-16",
+                          "targetColor": "blue",
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "node-15",
+                      "targetColor": "red",
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 9
   }
 ];
