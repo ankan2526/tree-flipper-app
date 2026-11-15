@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { createAudioPlayer, setAudioModeAsync, AudioPlayer } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer, AudioStatus } from 'expo-audio';
 import * as Haptics from 'expo-haptics';
 import { getSoundSettings, saveSoundSettings } from '@/utils/storage';
 
@@ -21,7 +21,9 @@ interface AudioContextValue {
   playVictorySound: () => void;
   playFailSound: () => void;
   playTapSound: () => void;
-  triggerHaptic: (type?: 'selection' | 'impactLight' | 'impactMedium' | 'impactHeavy' | 'success' | 'warning' | 'error') => void;
+  triggerHaptic: (
+    type?: 'selection' | 'impactLight' | 'impactMedium' | 'impactHeavy' | 'success' | 'warning' | 'error',
+  ) => void;
 }
 
 const AudioContext = createContext<AudioContextValue | null>(null);
@@ -45,6 +47,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     musicEnabled: true,
     hapticsEnabled: true,
   });
+  const [isSettingsLoaded, setIsSettingsLoaded] = useState(false);
 
   const bgmPlayerRef = useRef<AudioPlayer | null>(null);
   const flipPlayersRef = useRef<AudioPlayer[]>([]);
@@ -62,9 +65,11 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       try {
         await setAudioModeAsync({
           playsInSilentMode: true,
+          interruptionMode: 'mixWithOthers',
+          interruptionModeAndroid: 'mixWithOthers',
         });
       } catch {
-        // Audio mode might fail gracefully on some unsupported environments (e.g. web simulator)
+        // Audio mode might fail gracefully on unsupported environments
       }
 
       try {
@@ -73,6 +78,10 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
           setSettings(saved);
         }
       } catch {}
+
+      if (isMounted) {
+        setIsSettingsLoaded(true);
+      }
     }
 
     initAudio();
@@ -82,17 +91,13 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Initialize and manage BGM player
+  // Initialize BGM player (playback waits until saved settings are loaded)
   useEffect(() => {
     try {
       const bgmPlayer = createAudioPlayer(BGM_ASSET);
       bgmPlayer.loop = true;
       bgmPlayer.volume = 0.9;
       bgmPlayerRef.current = bgmPlayer;
-
-      if (settings.musicEnabled) {
-        bgmPlayer.play();
-      }
     } catch (e) {
       console.warn('Failed to initialize BGM player:', e);
     }
@@ -108,10 +113,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Handle music toggle reactions
+  // Handle BGM playback once settings are loaded and whenever musicEnabled changes
   useEffect(() => {
+    if (!isSettingsLoaded) return;
     const bgm = bgmPlayerRef.current;
     if (!bgm) return;
+
     try {
       if (settings.musicEnabled) {
         bgm.play();
@@ -119,37 +126,92 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         bgm.pause();
       }
     } catch {}
-  }, [settings.musicEnabled]);
+  }, [settings.musicEnabled, isSettingsLoaded]);
 
-  // Preload SFX players for low latency
+  // Preload SFX players and run a muted warm-up pass to prime Android's AudioTrack
   useEffect(() => {
-    try {
-      flipPlayersRef.current = FLIP_SOUND_ASSETS.map((asset) => {
-        const p = createAudioPlayer(asset);
-        p.volume = 0.7;
-        return p;
+    let isCleanedUp = false;
+    const subscriptions: { remove: () => void }[] = [];
+    const fallbackTimers: ReturnType<typeof setTimeout>[] = [];
+
+    const createWarmedUpPlayer = (
+      asset: Parameters<typeof createAudioPlayer>[0],
+      targetVolume: number,
+    ): AudioPlayer => {
+      const player = createAudioPlayer(asset);
+      player.muted = true;
+      player.volume = 0;
+
+      let warmupFinished = false;
+
+      const finishWarmup = (sub?: { remove: () => void }) => {
+        if (warmupFinished || isCleanedUp) return;
+        warmupFinished = true;
+
+        try {
+          sub?.remove();
+        } catch {}
+
+        try {
+          // Pause before unmuting so longer clips never leak audio if fallback fires
+          player.pause();
+          player.volume = targetVolume;
+          player.muted = false;
+        } catch {}
+      };
+
+      const sub = player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+        if (isCleanedUp || warmupFinished) return;
+
+        if (status.playbackState === 'ended') {
+          finishWarmup(sub);
+        } else if (status.isLoaded && status.playbackState === 'ready' && !status.playing) {
+          try {
+            player.play();
+          } catch {}
+        }
       });
-      specialPlayerRef.current = createAudioPlayer(SPECIAL_SOUND_ASSET);
-      if (specialPlayerRef.current) specialPlayerRef.current.volume = 0.8;
 
-      victoryPlayerRef.current = createAudioPlayer(VICTORY_SOUND_ASSET);
-      if (victoryPlayerRef.current) victoryPlayerRef.current.volume = 0.85;
+      subscriptions.push(sub);
 
-      failPlayerRef.current = createAudioPlayer(FAIL_SOUND_ASSET);
-      if (failPlayerRef.current) failPlayerRef.current.volume = 0.8;
+      try {
+        player.play();
+      } catch {}
 
-      tapPlayerRef.current = createAudioPlayer(TAP_SOUND_ASSET);
-      if (tapPlayerRef.current) tapPlayerRef.current.volume = 0.5;
+      const fallbackTimer = setTimeout(() => {
+        finishWarmup(sub);
+      }, 2500);
+      fallbackTimers.push(fallbackTimer);
+
+      return player;
+    };
+
+    try {
+      flipPlayersRef.current = FLIP_SOUND_ASSETS.map((asset) => createWarmedUpPlayer(asset, 0.7));
+      specialPlayerRef.current = createWarmedUpPlayer(SPECIAL_SOUND_ASSET, 0.8);
+      victoryPlayerRef.current = createWarmedUpPlayer(VICTORY_SOUND_ASSET, 0.85);
+      failPlayerRef.current = createWarmedUpPlayer(FAIL_SOUND_ASSET, 0.8);
+      tapPlayerRef.current = createWarmedUpPlayer(TAP_SOUND_ASSET, 0.5);
     } catch (e) {
       console.warn('Failed to preload SFX players:', e);
     }
 
     return () => {
+      isCleanedUp = true;
+      fallbackTimers.forEach((timer) => clearTimeout(timer));
+      subscriptions.forEach((sub) => {
+        try {
+          sub.remove();
+        } catch {}
+      });
+
       flipPlayersRef.current.forEach((p) => {
         try {
           p.release();
         } catch {}
       });
+      flipPlayersRef.current = [];
+
       [specialPlayerRef, victoryPlayerRef, failPlayerRef, tapPlayerRef].forEach((ref) => {
         if (ref.current) {
           try {
@@ -162,23 +224,34 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const playSoundEffect = useCallback(
-    (player: AudioPlayer | null) => {
+    async (player: AudioPlayer | null) => {
       if (!settings.sfxEnabled || !player) return;
       try {
-        player.seekTo(0);
+        player.muted = false;
+        await player.seekTo(0);
         player.play();
-      } catch (err) {
-        // Fallback for re-play attempt
+      } catch {
         try {
           player.play();
-        } catch {}
+        } catch (fallbackErr) {
+          console.warn('[SFX] Playback error:', fallbackErr);
+        }
       }
     },
     [settings.sfxEnabled],
   );
 
   const triggerHaptic = useCallback(
-    (type: 'selection' | 'impactLight' | 'impactMedium' | 'impactHeavy' | 'success' | 'warning' | 'error' = 'impactLight') => {
+    (
+      type:
+        | 'selection'
+        | 'impactLight'
+        | 'impactMedium'
+        | 'impactHeavy'
+        | 'success'
+        | 'warning'
+        | 'error' = 'impactLight',
+    ) => {
       if (!settings.hapticsEnabled) return;
       try {
         switch (type) {
@@ -298,4 +371,3 @@ export function useAudio() {
   }
   return ctx;
 }
-
