@@ -14,6 +14,7 @@ function AppNavigator() {
       }}
     >
       <Stack.Screen name="index" options={{ animationTypeForReplace: 'pop' }} />
+      <Stack.Screen name="chapter" />
       <Stack.Screen name="game" />
     </Stack>
   );

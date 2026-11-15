@@ -24,6 +24,8 @@ import { saveBestScore, saveCompletedLevel } from '../utils/storage';
 import { useAppTheme } from '../context/ThemeContext';
 import { useAudio } from '../context/AudioContext';
 
+const EMPTY_NODE_LOCKS = Object.freeze({});
+
 function createAllRedTree(node) {
   return {
     ...node,
@@ -48,7 +50,12 @@ export default function GameScreen({ levelId }) {
         (item) => item.id === (level.chapterId || GAME_CHAPTERS[0].id),
       )
     : null;
-  const moveLimit = chapter?.moveLimitMode === 'per-level' ? level?.moveLimit : null;
+  const moveLimit = ['per-level', 'node-locks'].includes(chapter?.moveLimitMode)
+    ? level?.moveLimit
+    : null;
+  const nodeLocks = chapter?.moveLimitMode === 'node-locks'
+    ? level?.nodeLocks || EMPTY_NODE_LOCKS
+    : EMPTY_NODE_LOCKS;
   const [currentTree, setCurrentTree] = useState(() =>
     level ? createAllRedTree(level.tree) : null,
   );
@@ -60,6 +67,10 @@ export default function GameScreen({ levelId }) {
   const [specialInfoAnchor, setSpecialInfoAnchor] = useState(null);
   const specialInfoLinkRef = useRef(null);
   const [moveCount, setMoveCount] = useState(0);
+  const [lockedNodeInfo, setLockedNodeInfo] = useState(null);
+  const lockedNodeIds = Object.entries(nodeLocks)
+    .filter(([, lockAfterMoves]) => moveCount >= lockAfterMoves)
+    .map(([nodeId]) => nodeId);
   const [isCompletionVisible, setIsCompletionVisible] = useState(false);
   const [isChapterCompletionVisible, setIsChapterCompletionVisible] = useState(false);
   const [isOutOfMovesVisible, setIsOutOfMovesVisible] = useState(false);
@@ -129,6 +140,7 @@ export default function GameScreen({ levelId }) {
     hasLost.current = false;
     setCurrentTree(createAllRedTree(level.tree));
     setMoveCount(0);
+    setLockedNodeInfo(null);
     setSpecialMoves(3);
     setIsSpecialMoveActive(false);
     setIsCompletionVisible(false);
@@ -140,10 +152,15 @@ export default function GameScreen({ levelId }) {
   }, [level]);
 
   const handleNodePress = useCallback(
-    (nodeId) => {
+    (nodeId, nodeAnchor) => {
       if (!currentTree || !targetTree || hasWon.current || hasLost.current) {
         return;
       }
+      if (nodeLocks[nodeId] && moveCount >= nodeLocks[nodeId]) {
+        setLockedNodeInfo({ nodeId, lockAfterMoves: nodeLocks[nodeId], anchor: nodeAnchor });
+        return;
+      }
+      setLockedNodeInfo(null);
 
       const useSpecialMove = isSpecialMoveActive && specialMoves > 0;
       const nextTree = useSpecialMove
@@ -183,9 +200,16 @@ export default function GameScreen({ levelId }) {
       isSpecialMoveActive,
       moveCount,
       moveLimit,
+      nodeLocks,
       playFailSound,
       playFlipSound,
       playSpecialSound,
+      setCurrentTree,
+      setIsOutOfMovesVisible,
+      setLockedNodeInfo,
+      setIsSpecialMoveActive,
+      setMoveCount,
+      setSpecialMoves,
       specialMoves,
       targetTree,
     ],
@@ -237,7 +261,7 @@ export default function GameScreen({ levelId }) {
         ) : null}
         <Text style={[styles.title, { color: colors.ink }]}>{level.name}</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          {chapter?.moveLimitMode === 'per-level'
+          {chapter?.moveLimitMode !== 'none'
             ? chapter.description
             : 'Make your tree match the target.'}
         </Text>
@@ -359,6 +383,9 @@ export default function GameScreen({ levelId }) {
           <TreeRenderer
             tree={currentTree}
             onNodePress={handleNodePress}
+            nodeLocks={nodeLocks}
+            moveCount={moveCount}
+            lockedNodeIds={lockedNodeIds}
             fitToWidth
           />
         </View>
@@ -472,6 +499,61 @@ export default function GameScreen({ levelId }) {
               Flip one node without changing its descendants.
             </Text>
           </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={Boolean(lockedNodeInfo)}
+        onRequestClose={() => setLockedNodeInfo(null)}
+      >
+        <View style={styles.specialInfoModalRoot}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss node lock information"
+            onPress={() => setLockedNodeInfo(null)}
+            style={StyleSheet.absoluteFill}
+          />
+          {lockedNodeInfo ? (
+            <View
+              accessibilityViewIsModal
+              accessibilityRole="alert"
+              style={[
+                styles.specialInfoPopover,
+                {
+                  backgroundColor: colors.palePrimary,
+                  borderColor: colors.primary,
+                  left: lockedNodeInfo.anchor
+                    ? Math.max(16, Math.min(
+                        lockedNodeInfo.anchor.x + lockedNodeInfo.anchor.width - specialInfoCardWidth,
+                        windowWidth - specialInfoCardWidth - 16,
+                      ))
+                    : 16,
+                  top: lockedNodeInfo.anchor?.y >= 105
+                    ? lockedNodeInfo.anchor.y - 92
+                    : (lockedNodeInfo.anchor?.y || 112) + (lockedNodeInfo.anchor?.height || 0) + 8,
+                  width: specialInfoCardWidth,
+                },
+              ]}
+            >
+              <View style={styles.specialInfoPopoverHeader}>
+                <Text style={[styles.specialInfoPopoverTitle, { color: colors.primary }]}>Node Locked!</Text>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Close node lock information"
+                  onPress={() => setLockedNodeInfo(null)}
+                  hitSlop={8}
+                  style={styles.specialInfoCloseButton}
+                >
+                  <Text style={[styles.specialInfoCloseText, { color: colors.ink }]}>×</Text>
+                </Pressable>
+              </View>
+              <Text style={[styles.specialInfoPopoverText, { color: colors.ink }]}>
+                This node locks after {lockedNodeInfo.lockAfterMoves} moves. Parent flips can still change its color.
+              </Text>
+            </View>
+          ) : null}
         </View>
       </Modal>
 

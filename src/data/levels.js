@@ -2282,6 +2282,156 @@ export const GAME_LEVELS = [
         }
       ]
     },
-    "moveLimit": 9
+    "moveLimit": 8
+  },
+  {
+    "id": "level-41",
+    "name": "Flip the Order - Easy",
+    "chapterId": "chapter-3",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": []
+            },
+            {
+              "id": "node-3",
+              "targetColor": "blue",
+              "children": []
+            },
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 3,
+    "nodeLocks": {
+      "node-4": 2
+    }
+  },
+  {
+    "id": "level-42",
+    "name": "Countdown 1",
+    "chapterId": "chapter-3",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "blue",
+                  "children": []
+                },
+                {
+                  "id": "node-4",
+                  "targetColor": "blue",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 3,
+    "nodeLocks": {
+      "node-3": 2,
+      "node-4": 1,
+      "node-1": 3
+    }
+  },
+  {
+    "id": "level-43",
+    "name": "Flip the Order - Hard",
+    "chapterId": "chapter-3",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "red",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "blue",
+              "children": []
+            },
+            {
+              "id": "node-3",
+              "targetColor": "blue",
+              "children": []
+            },
+            {
+              "id": "node-4",
+              "targetColor": "blue",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 2,
+    "nodeLocks": {
+      "node-2": 1,
+      "node-3": 2,
+      "node-4": 1
+    }
+  },
+  {
+    "id": "level-44",
+    "name": "Countdown 2",
+    "chapterId": "chapter-3",
+    "tree": {
+      "id": "root",
+      "targetColor": "red",
+      "children": [
+        {
+          "id": "node-1",
+          "targetColor": "blue",
+          "children": [
+            {
+              "id": "node-2",
+              "targetColor": "red",
+              "children": [
+                {
+                  "id": "node-3",
+                  "targetColor": "blue",
+                  "children": []
+                },
+                {
+                  "id": "node-4",
+                  "targetColor": "blue",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "moveLimit": 2,
+    "nodeLocks": {
+      "node-2": 1
+    }
   }
 ];

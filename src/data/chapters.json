@@ -10,5 +10,11 @@
     "title": "Branches Under Pressure",
     "description": "Match each tree before your limited moves run out.",
     "moveLimitMode": "per-level"
+  },
+  {
+    "id": "chapter-3",
+    "title": "Nodes on Borrowed Time",
+    "description": "Flip each node before its countdown runs out.",
+    "moveLimitMode": "node-locks"
   }
 ]

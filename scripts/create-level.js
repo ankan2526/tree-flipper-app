@@ -270,13 +270,13 @@ function validateLevel(level, index = 0) {
   if (!level || typeof level !== 'object' || Array.isArray(level)) {
     throw new Error(`${context} must be an object.`);
   }
-  const allowedKeys = ['id', 'name', 'tree', 'chapterId', 'moveLimit'];
+  const allowedKeys = ['id', 'name', 'tree', 'chapterId', 'moveLimit', 'nodeLocks'];
   const actualKeys = Object.keys(level);
   const unknownKeys = actualKeys.filter((key) => !allowedKeys.includes(key));
   const missingKeys = ['id', 'name', 'tree'].filter((key) => !actualKeys.includes(key));
   if (unknownKeys.length || missingKeys.length) {
     throw new Error(
-      `${context} must contain exactly id, name, and tree, with optional chapterId and moveLimit.`,
+      `${context} must contain id, name, and tree, with optional chapterId, moveLimit, and nodeLocks.`,
     );
   }
   validateId(level.id, `${context} ID`);
@@ -291,6 +291,10 @@ function validateLevel(level, index = 0) {
     (!Number.isInteger(level.moveLimit) || level.moveLimit < 1)
   ) {
     throw new Error(`${context} move limit must be a positive whole number.`);
+  }
+
+  if (level.nodeLocks !== undefined && (!level.nodeLocks || typeof level.nodeLocks !== 'object' || Array.isArray(level.nodeLocks))) {
+    throw new Error(`${context} node locks must be a mapping of node IDs to positive move counts.`);
   }
 
   const nodeIds = new Set();
@@ -321,6 +325,17 @@ function validateLevel(level, index = 0) {
   visitNode(level.tree, 1);
   if (nodeIds.has(level.id)) {
     throw new Error(`${context} ID "${level.id}" collides with a node ID in its tree.`);
+  }
+  if (level.nodeLocks) {
+    for (const [nodeId, lockAfterMoves] of Object.entries(level.nodeLocks)) {
+      if (!nodeIds.has(nodeId)) throw new Error(`${context} node lock references unknown node "${nodeId}".`);
+      if (!Number.isInteger(lockAfterMoves) || lockAfterMoves < 1) {
+        throw new Error(`${context} lock threshold for "${nodeId}" must be a positive whole number.`);
+      }
+      if (level.moveLimit && lockAfterMoves > level.moveLimit) {
+        throw new Error(`${context} lock threshold for "${nodeId}" cannot exceed the move limit.`);
+      }
+    }
   }
 }
 

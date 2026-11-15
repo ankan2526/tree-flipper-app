@@ -222,6 +222,10 @@
               Move limit
               <input id="move-limit" name="moveLimit" type="number" min="1" step="1" inputmode="numeric" />
             </label>
+            <label id="node-lock-field" hidden>
+              Selected node locks after moves
+              <input id="node-lock-moves" type="number" min="1" step="1" inputmode="numeric" />
+            </label>
           </div>
           <div class="section-heading tree-title">
             <h2>Target tree</h2>
@@ -288,6 +292,8 @@
         name: document.getElementById("level-name"),
         moveLimit: document.getElementById("move-limit"),
         moveLimitField: document.getElementById("move-limit-field"),
+        nodeLockField: document.getElementById("node-lock-field"),
+        nodeLockMoves: document.getElementById("node-lock-moves"),
         newLevel: document.getElementById("new-level"),
         nodeId: document.getElementById("selected-node-id"),
         nodeName: document.getElementById("selected-node-name"),
@@ -303,6 +309,7 @@
       let revision = "";
       let editingId = null;
       let tree = { id: "root", targetColor: "red", children: [] };
+      let nodeLocks = {};
       let selectedPath = [];
 
       function clone(value) {
@@ -487,6 +494,10 @@
         elements.colorBlue.classList.toggle("active", selected.targetColor === "blue");
         elements.removeNode.disabled = selectedPath.length === 0;
         elements.removeNode.title = selectedPath.length === 0 ? "The root node cannot be removed" : "";
+        const enabled = chapters.find(({ id }) => id === elements.chapter.value)?.moveLimitMode === "node-locks";
+        elements.nodeLockField.hidden = !enabled;
+        elements.nodeLockMoves.disabled = !enabled;
+        elements.nodeLockMoves.value = nodeLocks[selected.id] ?? "";
       }
 
       function renderTree() {
@@ -539,6 +550,7 @@
         elements.name.value = level.name;
         elements.chapter.value = level.chapterId || chapters[0]?.id || "";
         elements.moveLimit.value = level.moveLimit ?? "";
+        nodeLocks = clone(level.nodeLocks || {});
         updateMoveLimitVisibility();
         tree = clone(level.tree);
         selectedPath = [];
@@ -556,6 +568,7 @@
         elements.name.value = "";
         elements.chapter.value = chapters[0]?.id || "";
         elements.moveLimit.value = "";
+        nodeLocks = {};
         updateMoveLimitVisibility();
         tree = { id: "root", targetColor: "red", children: [] };
         selectedPath = [];
@@ -584,11 +597,23 @@
         if (isMoveLimitEnabled()) {
           level.moveLimit = Number(elements.moveLimit.value);
         }
+        if (isNodeLockMode()) {
+          const validIds = new Set();
+          function collectIds(node) { validIds.add(node.id.trim()); node.children.forEach(collectIds); }
+          collectIds(tree);
+          level.nodeLocks = Object.fromEntries(Object.entries(nodeLocks)
+            .filter(([nodeId]) => validIds.has(nodeId))
+            .map(([nodeId, count]) => [nodeId, Number(count)]));
+        }
         return level;
       }
 
       function isMoveLimitEnabled() {
-        return chapters.find(({ id }) => id === elements.chapter.value)?.moveLimitMode === "per-level";
+        return ["per-level", "node-locks"].includes(chapters.find(({ id }) => id === elements.chapter.value)?.moveLimitMode);
+      }
+
+      function isNodeLockMode() {
+        return chapters.find(({ id }) => id === elements.chapter.value)?.moveLimitMode === "node-locks";
       }
 
       function updateMoveLimitVisibility() {
@@ -596,13 +621,26 @@
         elements.moveLimitField.hidden = !isRequired;
         elements.moveLimit.required = isRequired;
         if (!isRequired) elements.moveLimit.value = "";
+        renderInspector();
       }
 
       elements.nodeId.addEventListener("input", () => {
         const selected = getNodeAtPath(selectedPath);
         if (!selected) return;
+        if (nodeLocks[selected.id] !== undefined) {
+          nodeLocks[elements.nodeId.value] = nodeLocks[selected.id];
+          delete nodeLocks[selected.id];
+        }
         selected.id = elements.nodeId.value;
         elements.nodeName.textContent = selectedPath.length ? selected.id || "Unnamed node" : "Root node";
+        renderTreePreview();
+      });
+
+      elements.nodeLockMoves.addEventListener("input", () => {
+        const selected = getNodeAtPath(selectedPath);
+        if (!selected) return;
+        if (elements.nodeLockMoves.value === "") delete nodeLocks[selected.id];
+        else nodeLocks[selected.id] = Number(elements.nodeLockMoves.value);
         renderTreePreview();
       });
 

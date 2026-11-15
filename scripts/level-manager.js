@@ -76,7 +76,7 @@ function readChapters(filePath) {
       !chapter.id ||
       typeof chapter.title !== 'string' ||
       !chapter.title.trim() ||
-      !['none', 'per-level'].includes(chapter.moveLimitMode)
+      !['none', 'per-level', 'node-locks'].includes(chapter.moveLimitMode)
     ) {
       throw new RequestError(500, 'Chapter data contains an invalid entry.');
     }
@@ -95,12 +95,19 @@ function validateChapterAssignment(level, index, chapters) {
   if (!chapter) {
     throw new RequestError(400, `Chapter "${chapterId}" does not exist.`);
   }
-  if (chapter.moveLimitMode === 'per-level') {
+  if (['per-level', 'node-locks'].includes(chapter.moveLimitMode)) {
     if (!Number.isInteger(level.moveLimit) || level.moveLimit < 1) {
       throw new RequestError(400, 'This chapter requires a positive whole-number move limit.');
     }
   } else if (level.moveLimit !== undefined) {
     throw new RequestError(400, 'This chapter does not use a move limit.');
+  }
+  if (chapter.moveLimitMode === 'node-locks') {
+    if (!level.nodeLocks || typeof level.nodeLocks !== 'object' || Array.isArray(level.nodeLocks)) {
+      throw new RequestError(400, 'This chapter requires node lock thresholds.');
+    }
+  } else if (level.nodeLocks !== undefined) {
+    throw new RequestError(400, 'This chapter does not use node locks.');
   }
   return { ...level, chapterId };
 }

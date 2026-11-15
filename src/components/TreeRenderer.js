@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native';
-import Svg, { Circle, Line } from 'react-native-svg';
+import Svg, { Circle, Line, Text as SvgText } from 'react-native-svg';
 import { useAppTheme } from '../context/ThemeContext';
 
 const NODE_RADIUS = 18;
@@ -83,10 +84,14 @@ export default function TreeRenderer({
   onNodePress,
   scale = 1,
   selectedNodeId,
+  nodeLocks = {},
+  moveCount = 0,
+  lockedNodeIds = [],
   fitToWidth = false,
 }) {
-  const { colors } = useAppTheme();
+  const { colors, themeName } = useAppTheme();
   const [viewportWidth, setViewportWidth] = useState(0);
+  const nodePressableRefs = useRef({});
   const layout = useMemo(
     () => (tree ? createLayout(tree) : null),
     [tree],
@@ -157,20 +162,67 @@ export default function TreeRenderer({
                 cy={node.y}
                 r={NODE_RADIUS}
                 fill={nodeColorMap[node.color] || colors.nodeRed}
-                stroke={node.id === selectedNodeId ? colors.ink : colors.nodeBorder}
-                strokeWidth={node.id === selectedNodeId ? 4 : 3}
+                stroke={lockedNodeIds.includes(node.id) ? colors.lockedText : node.id === selectedNodeId ? colors.ink : colors.nodeBorder}
+                strokeWidth={lockedNodeIds.includes(node.id) || node.id === selectedNodeId ? 4 : 3}
                 accessibilityLabel={`${node.id}, ${node.color}`}
               />
             ))}
+            {layout.nodes.filter((node) => nodeLocks[node.id] && moveCount < nodeLocks[node.id]).map((node) => {
+              const remaining = Math.max(0, nodeLocks[node.id] - moveCount);
+              return (
+                <SvgText
+                  key={`lock-count-${node.id}`}
+                  x={node.x}
+                  y={node.y + 5}
+                  textAnchor="middle"
+                  fill={lockedNodeIds.includes(node.id) ? colors.lockedText : colors.ink}
+                  fontSize={14}
+                  fontWeight="700"
+                  accessibilityLabel={`${remaining} moves until ${node.id} locks`}
+                >
+                  {remaining}
+                </SvgText>
+              );
+            })}
           </Svg>
+          <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+            {layout.nodes.filter((node) => nodeLocks[node.id] && moveCount >= nodeLocks[node.id]).map((node) => {
+              const iconSize = 20 * effectiveScale;
+              return (
+                <Image
+                  key={`locked-icon-${node.id}`}
+                  source={require('../../assets/images/lock.png')}
+                  accessibilityLabel={`${node.id} locked`}
+                  resizeMode="contain"
+                  tintColor={themeName === 'dark' ? '#FFFFFF' : '#000000'}
+                  style={[
+                    styles.lockIcon,
+                    {
+                      left: node.x * effectiveScale - iconSize / 2,
+                      top: node.y * effectiveScale - iconSize / 2,
+                      width: iconSize,
+                      height: iconSize,
+                    },
+                  ]}
+                />
+              );
+            })}
+          </View>
           {onNodePress ? (
             <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
               {layout.nodes.map((node) => (
                 <Pressable
                   key={node.id}
+                  ref={(ref) => { nodePressableRefs.current[node.id] = ref; }}
                   accessibilityRole="button"
-                  accessibilityLabel={`${node.id}, ${node.color}`}
-                  onPress={() => onNodePress(node.id)}
+                  accessibilityLabel={lockedNodeIds.includes(node.id)
+                    ? `${node.id}, locked. Tap to view why.`
+                    : `${node.id}, ${node.color}`}
+                  onPress={() => {
+                    nodePressableRefs.current[node.id]?.measureInWindow((x, y, width, height) => {
+                      onNodePress(node.id, { x, y, width, height });
+                    });
+                  }}
                   style={[
                     styles.nodeHitTarget,
                     {
@@ -208,6 +260,9 @@ const styles = StyleSheet.create({
     top: 0,
   },
   nodeHitTarget: {
+    position: 'absolute',
+  },
+  lockIcon: {
     position: 'absolute',
   },
 });
