@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -332,7 +333,10 @@ export default function HomeScreen() {
                     pressed && styles.pressedCard,
                   ]}
                 >
-                  <Text style={[styles.settingsIconText, { color: colors.primary }]}>⚙</Text>
+                  <Image
+                    source={require('../../assets/images/settings-gear.png')}
+                    style={[styles.settingsIconImage, { tintColor: colors.primary }]}
+                  />
                 </Pressable>
               </View>
             </View>
@@ -450,9 +454,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  settingsIconText: {
-    fontSize: 22,
-    lineHeight: 24,
+  settingsIconImage: {
+    height: 24,
+    width: 24,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 38,

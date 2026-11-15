@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   Modal,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -54,6 +55,7 @@ export default function GameScreen({ levelId }) {
   const [targetTree] = useState(() => level?.tree ?? null);
   const [specialMoves, setSpecialMoves] = useState(3);
   const [isSpecialMoveActive, setIsSpecialMoveActive] = useState(false);
+  const [isRestartConfirmVisible, setIsRestartConfirmVisible] = useState(false);
   const [isSpecialInfoVisible, setIsSpecialInfoVisible] = useState(false);
   const [specialInfoAnchor, setSpecialInfoAnchor] = useState(null);
   const specialInfoLinkRef = useRef(null);
@@ -134,6 +136,7 @@ export default function GameScreen({ levelId }) {
     setIsOutOfMovesVisible(false);
     setCompletionSaveError(null);
     setIsNewBestScore(false);
+    setIsRestartConfirmVisible(false);
   }, [level]);
 
   const handleNodePress = useCallback(
@@ -262,8 +265,27 @@ export default function GameScreen({ levelId }) {
           ]}
         >
           <View style={styles.panelHeading}>
-            {moveLimit ? (
-              <View
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Restart level"
+              onPress={() => {
+                playTapSound();
+                setIsRestartConfirmVisible(true);
+              }}
+              hitSlop={6}
+              style={({ pressed }) => [
+                styles.restartButton,
+                { backgroundColor: colors.palePrimary, borderColor: colors.cardBorder },
+                pressed && styles.pressedButton,
+              ]}
+            >
+              <Image
+                source={require('../../assets/images/restart.png')}
+                style={[styles.restartIcon, { tintColor: colors.primary }]}
+              />
+            </Pressable>
+            <View style={styles.moveLimitSlot}>
+              {moveLimit ? <View
                 accessibilityLabel={`${Math.max(0, moveLimit - moveCount)} moves remaining out of ${moveLimit}`}
                 style={[
                   styles.moveLimitCard,
@@ -275,33 +297,10 @@ export default function GameScreen({ levelId }) {
                   {Math.max(0, moveLimit - moveCount)}
                 </Text>
                 <Text style={[styles.moveLimitTotal, { color: colors.muted }]}>of {moveLimit}</Text>
-              </View>
-            ) : <View style={styles.panelHeadingSpacer} />}
+              </View> : null}
+            </View>
             <View style={styles.specialControl}>
-              <Text style={[styles.movesRemaining, { color: colors.accent }]}>
-                {Math.min(specialMoves, moveLimit - moveCount)} left
-              </Text>
               <View style={styles.specialToggleColumn}>
-                <Pressable
-                  accessibilityRole="switch"
-                  accessibilityLabel="Special move"
-                  accessibilityState={{
-                    checked: isSpecialMoveActive,
-                    disabled: specialMoves === 0,
-                  }}
-                  disabled={specialMoves === 0}
-                  onPress={() => {
-                    playTapSound();
-                    setIsSpecialMoveActive((active) => !active);
-                  }}
-                  style={[
-                    styles.toggle,
-                    { backgroundColor: isSpecialMoveActive ? colors.primary : '#D5DDD6' },
-                    specialMoves === 0 && styles.toggleDisabled,
-                  ]}
-                >
-                  <View style={[styles.toggleKnob, isSpecialMoveActive && styles.toggleKnobActive]} />
-                </Pressable>
                 <Pressable
                   ref={specialInfoLinkRef}
                   accessibilityRole="button"
@@ -323,6 +322,37 @@ export default function GameScreen({ levelId }) {
                   <Text style={[styles.specialInfoLinkText, { color: colors.primary }]}>Special </Text>
                   <Text style={[styles.specialInfoLinkText, styles.specialInfoLinkIcon, { color: colors.primary }]}>ⓘ</Text>
                 </Pressable>
+                
+                <Pressable
+                  accessibilityRole="switch"
+                  accessibilityLabel={`Special move, ${specialMoves} remaining`}
+                  accessibilityState={{
+                    checked: isSpecialMoveActive,
+                    disabled: specialMoves === 0,
+                  }}
+                  disabled={specialMoves === 0}
+                  onPress={() => {
+                    playTapSound();
+                    setIsSpecialMoveActive((active) => !active);
+                  }}
+                  style={({ pressed }) => [
+                    styles.specialToggleTarget,
+                    pressed && specialMoves > 0 && styles.specialTogglePressed,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.toggle,
+                      { backgroundColor: isSpecialMoveActive ? colors.primary : '#D5DDD6' },
+                      specialMoves === 0 && styles.toggleDisabled,
+                    ]}
+                  >
+                    <View style={[styles.toggleKnob, isSpecialMoveActive && styles.toggleKnobActive]} />
+                  </View>
+                  <Text style={[styles.movesRemaining, { color: colors.accent }]}>
+                    {Math.min(specialMoves, moveLimit - moveCount)} left
+                  </Text>
+                </Pressable>
               </View>
             </View>
           </View>
@@ -333,6 +363,60 @@ export default function GameScreen({ levelId }) {
           />
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="fade"
+        transparent
+        visible={isRestartConfirmVisible}
+        onRequestClose={() => setIsRestartConfirmVisible(false)}
+      >
+        <View style={styles.completionBackdrop}>
+          <View
+            accessibilityViewIsModal
+            accessibilityRole="alert"
+            style={[
+              styles.completionCard,
+              { backgroundColor: colors.card, borderColor: colors.cardBorder },
+            ]}
+          >
+            <View style={[styles.completionMark, { backgroundColor: colors.palePrimary }]}>
+              <Text style={[styles.completionMarkText, { color: colors.primary }]}>↻</Text>
+            </View>
+            <Text style={[styles.completionTitle, { color: colors.ink }]}>Restart this level?</Text>
+            <Text style={[styles.completionMessage, { color: colors.muted }]}>
+              Your tree and move count will be reset.
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                playTapSound();
+                handleRetryLevel();
+              }}
+              style={({ pressed }) => [
+                styles.completionPrimaryButton,
+                { backgroundColor: colors.primary },
+                pressed && styles.pressedButton,
+              ]}
+            >
+              <Text style={styles.primaryButtonText}>Restart Level</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                playTapSound();
+                setIsRestartConfirmVisible(false);
+              }}
+              style={({ pressed }) => [
+                styles.homeButton,
+                { backgroundColor: colors.palePrimary },
+                pressed && styles.pressedButton,
+              ]}
+            >
+              <Text style={[styles.homeButtonText, { color: colors.primary }]}>Keep Playing</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         animationType="fade"
@@ -552,14 +636,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   moveLimitCard: {
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     alignItems: 'center',
     flexDirection: 'row',
     gap: 6,
     borderRadius: 12,
     borderWidth: 1,
-    marginHorizontal: 4,
-    marginTop: 12,
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
@@ -591,8 +673,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingTop: 14,
   },
-  panelHeadingSpacer: {
+  moveLimitSlot: {
+    alignItems: 'center',
     flex: 1,
+  },
+  restartButton: {
+    alignItems: 'center',
+    borderRadius: 11,
+    borderWidth: 1,
+    justifyContent: 'center',
+    height: 36,
+    marginRight: 8,
+    width: 36,
+  },
+  restartIcon: {
+    height: 22,
+    width: 22,
+    resizeMode: 'contain',
   },
   readOnly: {
     fontSize: 9,
@@ -606,7 +703,17 @@ const styles = StyleSheet.create({
   },
   specialToggleColumn: {
     alignItems: 'center',
-    gap: 2,
+  },
+  specialToggleTarget: {
+    alignItems: 'center',
+    borderRadius: 12,
+    gap: 4,
+    minWidth: 58,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  specialTogglePressed: {
+    opacity: 0.72,
   },
   specialInfoLink: {
     flexDirection: 'row',
