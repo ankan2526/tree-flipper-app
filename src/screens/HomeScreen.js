@@ -121,7 +121,7 @@ export default function HomeScreen() {
             </Text>
             {isActive ? (
               <Text style={[styles.activeLabel, { color: colors.primary, backgroundColor: colors.palePrimary }]}>
-                UP NEXT
+                IN PROGRESS
               </Text>
             ) : null}
           </View>
