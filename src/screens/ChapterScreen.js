@@ -16,6 +16,7 @@ import TreeRenderer, { getTreeNaturalWidth } from '../components/TreeRenderer';
 import { GAME_LEVELS } from '../data/levels';
 import GAME_CHAPTERS from '../data/chapters.json';
 import { getChapterProgress } from '../utils/chapterProgress';
+import { getCachedCompletedLevels, setCachedCompletedLevels } from '../utils/progressCache';
 import { getBestScores, getCompletedLevels } from '../utils/storage';
 import { useAppTheme } from '../context/ThemeContext';
 import { useAudio } from '../context/AudioContext';
@@ -40,9 +41,9 @@ export default function ChapterScreen({ chapterId }) {
   const { colors } = useAppTheme();
   const { playTapSound } = useAudio();
   const { width: windowWidth } = useWindowDimensions();
-  const [completedLevels, setCompletedLevels] = useState([]);
+  const [completedLevels, setCompletedLevels] = useState(() => getCachedCompletedLevels() || []);
   const [bestScores, setBestScores] = useState({});
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => getCachedCompletedLevels() === null);
   const isMounted = useRef(false);
 
   const chapter = GAME_CHAPTERS.find((entry) => entry.id === chapterId);
@@ -56,6 +57,7 @@ export default function ChapterScreen({ chapterId }) {
     try {
       const [completed, scores] = await Promise.all([getCompletedLevels(), getBestScores()]);
       if (isMounted.current) {
+        setCachedCompletedLevels(completed);
         setCompletedLevels(completed);
         setBestScores(scores || {});
       }
@@ -230,6 +232,9 @@ export default function ChapterScreen({ chapterId }) {
         data={rows}
         keyExtractor={(row) => row.id}
         renderItem={renderRow}
+        initialNumToRender={3}
+        maxToRenderPerBatch={3}
+        windowSize={5}
         contentContainerStyle={styles.content}
         ListHeaderComponent={
           <View>

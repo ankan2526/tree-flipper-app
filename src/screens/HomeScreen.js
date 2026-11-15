@@ -15,6 +15,7 @@ import { useFocusEffect, router } from 'expo-router';
 import GAME_CHAPTERS from '../data/chapters.json';
 import { getChapterProgress, getNextPlayableLevel } from '../utils/chapterProgress';
 import { getCompletedLevels } from '../utils/storage';
+import { setCachedCompletedLevels } from '../utils/progressCache';
 import { useAppTheme } from '../context/ThemeContext';
 import { useAudio } from '../context/AudioContext';
 import SettingsModal from './SettingsModal';
@@ -30,7 +31,10 @@ export default function HomeScreen() {
   const loadProgress = useCallback(async () => {
     try {
       const completed = await getCompletedLevels();
-      if (isMounted.current) setCompletedLevels(completed);
+      if (isMounted.current) {
+        setCachedCompletedLevels(completed);
+        setCompletedLevels(completed);
+      }
     } catch (error) {
       if (isMounted.current) {
         const message = error instanceof Error ? error.message : 'Unknown storage error.';
@@ -76,11 +80,6 @@ export default function HomeScreen() {
     if (firstUnlockedChapter) {
       router.push({ pathname: '/chapter', params: { chapterId: firstUnlockedChapter.id } });
     }
-  };
-
-  const openReplayChapter = () => {
-    playTapSound();
-    router.push({ pathname: '/chapter', params: { chapterId: GAME_CHAPTERS[0].id } });
   };
 
   const renderChapter = ({ item: chapter }) => {
@@ -250,29 +249,6 @@ export default function HomeScreen() {
             <Text style={[styles.sectionTitle, { color: colors.ink }]}>Your Chapters</Text>
           </View>
         }
-        ListFooterComponent={
-          <View>
-            {allComplete ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Replay a chapter"
-                onPress={openReplayChapter}
-                style={({ pressed }) => [
-                  styles.replayCard,
-                  { backgroundColor: colors.card, borderColor: colors.cardBorder },
-                  pressed && styles.pressed,
-                ]}
-              >
-                <View>
-                  <Text style={[styles.replayTitle, { color: colors.ink }]}>Replay a Chapter</Text>
-                  <Text style={[styles.replaySubtitle, { color: colors.muted }]}>Visit any chapter and play its levels again.</Text>
-                </View>
-                <Text style={[styles.replayArrow, { color: colors.primary }]}>›</Text>
-              </Pressable>
-            ) : null}
-            <View style={styles.footer} />
-          </View>
-        }
       />
       {isLoading ? (
         <View style={[styles.loadingOverlay, { backgroundColor: `${colors.background}AA` }]}>
@@ -332,10 +308,6 @@ const styles = StyleSheet.create({
   completeSubtitle: { fontSize: 11, fontWeight: '700', marginTop: 3 },
   chapterIndicator: { fontSize: 25, fontWeight: '700', paddingHorizontal: 4 },
   lockIcon: { height: 20, resizeMode: 'contain', width: 20 },
-  replayCard: { alignItems: 'center', borderRadius: 15, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingHorizontal: 15, paddingVertical: 14 },
-  replayTitle: { fontSize: 15, fontWeight: '800' },
-  replaySubtitle: { fontSize: 12, marginTop: 3 },
-  replayArrow: { fontSize: 24, fontWeight: '700', paddingLeft: 10 },
   pressed: { opacity: 0.78 },
   footer: { height: 20 },
   loadingOverlay: { alignItems: 'center', bottom: 0, justifyContent: 'center', left: 0, position: 'absolute', right: 0, top: 0 },
