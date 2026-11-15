@@ -374,7 +374,9 @@ export default function GameScreen({ levelId }) {
                     <View style={[styles.toggleKnob, isSpecialMoveActive && styles.toggleKnobActive]} />
                   </View>
                   <Text style={[styles.movesRemaining, { color: colors.accent }]}>
-                    {Math.min(specialMoves, moveLimit - moveCount)} left
+                    {moveLimit
+                      ? Math.min(specialMoves, Math.max(0, moveLimit - moveCount))
+                      : specialMoves} left
                   </Text>
                 </Pressable>
               </View>
