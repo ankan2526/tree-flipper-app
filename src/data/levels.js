@@ -3586,7 +3586,7 @@ export const GAME_LEVELS = [
         }
       ]
     },
-    "moveLimit": 15,
+    "moveLimit": 13,
     "nodeLocks": {
       "node-8": 1,
       "node-10": 2,
