@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -160,7 +161,10 @@ export default function ChapterScreen({ chapterId }) {
             </View>
           ) : !level.isUnlocked ? (
             <View style={[styles.lockBadge, { backgroundColor: colors.lockedBorder }]}>
-              <Text style={[styles.lockIcon, { color: colors.lockedText }]}>🔒</Text>
+              <Image
+                source={require('../../assets/images/lock.png')}
+                style={[styles.lockIcon, { tintColor: colors.lockedText }]}
+              />
             </View>
           ) : null}
         </View>
@@ -300,7 +304,7 @@ const styles = StyleSheet.create({
   badge: { alignItems: 'center', borderRadius: 11, height: 22, justifyContent: 'center', width: 22 },
   badgeText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   lockBadge: { alignItems: 'center', borderRadius: 11, height: 22, justifyContent: 'center', width: 22 },
-  lockIcon: { fontSize: 11 },
+  lockIcon: { height: 14, resizeMode: 'contain', width: 14 },
   levelName: { fontSize: 16, fontWeight: '700', marginTop: 4, marginBottom: 4 },
   moveLimitLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 0.4, marginTop: 4 },
   treePreviewWrapper: { alignItems: 'center', justifyContent: 'center', paddingVertical: 4, width: '100%' },

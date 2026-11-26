@@ -288,7 +288,7 @@ export default function SettingsModal({
                 ]}
               >
                 <Text style={[styles.aboutLabel, { color: colors.ink }]}>Version</Text>
-                <Text style={[styles.aboutValue, { color: colors.muted }]}>1.0.0</Text>
+                <Text style={[styles.aboutValue, { color: colors.muted }]}>1.0.2</Text>
               </View>
               <View style={styles.aboutInfoBox}>
                 <Text style={[styles.aboutStory, { color: colors.muted }]}>
