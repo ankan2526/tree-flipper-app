@@ -20,7 +20,7 @@ import {
   flipSingleNode,
   flipSubtree,
 } from '../utils/gameLogic';
-import { saveBestScore, saveCompletedLevel } from '../utils/storage';
+import { saveBestScore, saveChallengeBestScore, saveCompletedLevel } from '../utils/storage';
 import { useAppTheme } from '../context/ThemeContext';
 import { useAudio } from '../context/AudioContext';
 
@@ -34,7 +34,7 @@ function createAllRedTree(node) {
   };
 }
 
-export default function GameScreen({ levelId }) {
+export default function GameScreen({ levelId, mode, challengeMoves }) {
   const { colors } = useAppTheme();
   const { width: windowWidth } = useWindowDimensions();
   const {
@@ -45,6 +45,8 @@ export default function GameScreen({ levelId }) {
     playTapSound,
   } = useAudio();
   const level = GAME_LEVELS.find((item) => item.id === levelId);
+  const isChallengeMode = mode === 'challenge';
+  const challengeMovesBefore = isChallengeMode ? Math.max(0, Number.parseInt(challengeMoves, 10) || 0) : 0;
   const chapter = level
     ? GAME_CHAPTERS.find(
         (item) => item.id === (level.chapterId || GAME_CHAPTERS[0].id),
@@ -87,11 +89,15 @@ export default function GameScreen({ levelId }) {
   const chapterLevelIndex = chapterLevels.findIndex((item) => item.id === levelId);
   const isChapterFinalLevel =
     chapterLevelIndex >= 0 && chapterLevelIndex === chapterLevels.length - 1;
-  const nextLevel = isChapterFinalLevel
+  const nextChallengeLevel = GAME_LEVELS[levelIndex + 1] || null;
+  const nextLevel = isChallengeMode
+    ? nextChallengeLevel
+    : isChapterFinalLevel
     ? GAME_LEVELS.find(
         (item) => (item.chapterId || GAME_CHAPTERS[0].id) === nextChapter?.id,
       ) || null
     : chapterLevels[chapterLevelIndex + 1] || null;
+  const isChallengeFinalLevel = isChallengeMode && levelIndex === GAME_LEVELS.length - 1;
 
   const completeLevel = useCallback(async (finalMoveCount) => {
     playVictorySound();
@@ -101,13 +107,17 @@ export default function GameScreen({ levelId }) {
       if (isNewBest) {
         setIsNewBestScore(true);
       }
+      if (isChallengeFinalLevel) {
+        const challengeResult = await saveChallengeBestScore(challengeMovesBefore + finalMoveCount);
+        setIsNewBestScore(isNewBest || challengeResult.isNewBest);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown storage error.';
       setCompletionSaveError(message);
     }
-    setIsChapterCompletionVisible(isChapterFinalLevel);
+    setIsChapterCompletionVisible(isChapterFinalLevel && !isChallengeMode);
     setIsCompletionVisible(true);
-  }, [isChapterFinalLevel, level, playVictorySound]);
+  }, [challengeMovesBefore, isChapterFinalLevel, isChallengeFinalLevel, isChallengeMode, level, playVictorySound]);
 
   const handleGoHome = useCallback(() => {
     if (router.canGoBack()) {
@@ -129,11 +139,30 @@ export default function GameScreen({ levelId }) {
     if (!nextLevel) {
       return;
     }
-    router.replace({ pathname: '/game', params: { levelId: nextLevel.id } });
-  }, [nextLevel]);
+    router.replace({
+      pathname: '/game',
+      params: isChallengeMode
+        ? {
+            levelId: nextLevel.id,
+            mode: 'challenge',
+            challengeMoves: String(challengeMovesBefore + moveCount),
+          }
+        : { levelId: nextLevel.id },
+    });
+  }, [challengeMovesBefore, isChallengeMode, moveCount, nextLevel]);
 
   const handleRetryLevel = useCallback(() => {
     if (!level) {
+      return;
+    }
+    if (isChallengeMode) {
+      const firstLevel = GAME_LEVELS[0];
+      if (firstLevel) {
+        router.replace({
+          pathname: '/game',
+          params: { levelId: firstLevel.id, mode: 'challenge', challengeMoves: '0' },
+        });
+      }
       return;
     }
     hasWon.current = false;
@@ -149,7 +178,7 @@ export default function GameScreen({ levelId }) {
     setCompletionSaveError(null);
     setIsNewBestScore(false);
     setIsRestartConfirmVisible(false);
-  }, [level]);
+  }, [isChallengeMode, level]);
 
   const handleNodePress = useCallback(
     (nodeId, nodeAnchor) => {
@@ -256,12 +285,16 @@ export default function GameScreen({ levelId }) {
 
         {chapter ? (
           <Text style={[styles.chapterEyebrow, { color: colors.primary }]}>
-            CHAPTER {String(GAME_CHAPTERS.indexOf(chapter) + 1).padStart(2, '0')} · {chapter.title}
+            {isChallengeMode
+              ? `CHALLENGE MODE · LEVEL ${levelIndex + 1} OF ${GAME_LEVELS.length}`
+              : `CHAPTER ${String(GAME_CHAPTERS.indexOf(chapter) + 1).padStart(2, '0')} · ${chapter.title}`}
           </Text>
         ) : null}
         <Text style={[styles.title, { color: colors.ink }]}>{level.name}</Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          {chapter?.moveLimitMode !== 'none'
+          {isChallengeMode
+            ? `Run total: ${challengeMovesBefore + moveCount} ${challengeMovesBefore + moveCount === 1 ? 'move' : 'moves'}`
+            : chapter?.moveLimitMode !== 'none'
             ? chapter.description
             : 'Make your tree match the target.'}
         </Text>
@@ -309,18 +342,24 @@ export default function GameScreen({ levelId }) {
               />
             </Pressable>
             <View style={styles.moveLimitSlot}>
-              {moveLimit ? <View
-                accessibilityLabel={`${Math.max(0, moveLimit - moveCount)} moves remaining out of ${moveLimit}`}
+              {moveLimit || chapter?.moveLimitMode === 'none' ? <View
+                accessibilityLabel={moveLimit
+                  ? `${Math.max(0, moveLimit - moveCount)} moves remaining out of ${moveLimit}`
+                  : `${moveCount} moves made`}
                 style={[
                   styles.moveLimitCard,
                   { backgroundColor: colors.palePrimary, borderColor: colors.cardBorder },
                 ]}
               >
-                <Text style={[styles.moveLimitLabel, { color: colors.muted }]}>MOVES LEFT</Text>
-                <Text style={[styles.moveLimitText, { color: colors.primary }]}>
-                  {Math.max(0, moveLimit - moveCount)}
+                <Text style={[styles.moveLimitLabel, { color: colors.muted }]}>
+                  {moveLimit ? 'MOVES LEFT' : 'MOVES'}
                 </Text>
-                <Text style={[styles.moveLimitTotal, { color: colors.muted }]}>of {moveLimit}</Text>
+                <Text style={[styles.moveLimitText, { color: colors.primary }]}>
+                  {moveLimit ? Math.max(0, moveLimit - moveCount) : moveCount}
+                </Text>
+                {moveLimit ? (
+                  <Text style={[styles.moveLimitTotal, { color: colors.muted }]}>of {moveLimit}</Text>
+                ) : null}
               </View> : null}
             </View>
             <View style={styles.specialControl}>
@@ -411,9 +450,13 @@ export default function GameScreen({ levelId }) {
             <View style={[styles.completionMark, { backgroundColor: colors.palePrimary }]}>
               <Text style={[styles.completionMarkText, { color: colors.primary }]}>↻</Text>
             </View>
-            <Text style={[styles.completionTitle, { color: colors.ink }]}>Restart this level?</Text>
+            <Text style={[styles.completionTitle, { color: colors.ink }]}>
+              {isChallengeMode ? 'Restart Challenge?' : 'Restart this level?'}
+            </Text>
             <Text style={[styles.completionMessage, { color: colors.muted }]}>
-              Your tree and move count will be reset.
+              {isChallengeMode
+                ? 'Your challenge run will restart from Level 1.'
+                : 'Your tree and move count will be reset.'}
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -427,7 +470,9 @@ export default function GameScreen({ levelId }) {
                 pressed && styles.pressedButton,
               ]}
             >
-              <Text style={styles.primaryButtonText}>Restart Level</Text>
+              <Text style={styles.primaryButtonText}>
+                {isChallengeMode ? 'Restart Challenge' : 'Restart Level'}
+              </Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -586,17 +631,23 @@ export default function GameScreen({ levelId }) {
             </View>
             <Text style={[styles.completionTitle, { color: colors.ink }]}>
               {isOutOfMovesVisible
-                ? 'Out of moves!'
-                : isChapterCompletionVisible
-                  ? 'Chapter complete!'
-                  : 'Level complete!'}
+                ? (isChallengeMode ? 'Challenge failed!' : 'Out of moves!')
+                : isChallengeFinalLevel
+                  ? 'Challenge complete!'
+                  : isChapterCompletionVisible
+                    ? 'Chapter complete!'
+                    : 'Level complete!'}
             </Text>
             <Text style={[styles.completionMessage, { color: colors.muted }]}>
               {isOutOfMovesVisible
-                ? 'Your move limit ran out before the trees matched. Try a different strategy.'
-                : isChapterCompletionVisible
-                  ? `Congratulations! You completed ${chapter.title}.${nextChapter ? ` ${nextChapter.title} is ready when you are.` : ' You have completed every chapter.'}`
-                  : `You matched the tree in ${moveCount} ${moveCount === 1 ? 'move' : 'moves'}.`}
+                ? isChallengeMode
+                  ? 'Your run ended here. Retry to start again from Level 1.'
+                  : 'Your move limit ran out before the trees matched. Try a different strategy.'
+                : isChallengeFinalLevel
+                  ? `You completed all ${GAME_LEVELS.length} levels in ${challengeMovesBefore + moveCount} moves.`
+                  : isChapterCompletionVisible
+                    ? `Congratulations! You completed ${chapter.title}.${nextChapter ? ` ${nextChapter.title} is ready when you are.` : ' You have completed every chapter.'}`
+                    : `You matched the tree in ${moveCount} ${moveCount === 1 ? 'move' : 'moves'}.`}
             </Text>
             {isNewBestScore && (
               <View
@@ -625,7 +676,9 @@ export default function GameScreen({ levelId }) {
                   pressed && styles.pressedButton,
                 ]}
               >
-                <Text style={styles.primaryButtonText}>Retry Level</Text>
+                <Text style={styles.primaryButtonText}>
+                  {isChallengeMode ? 'Retry Challenge' : 'Retry Level'}
+                </Text>
               </Pressable>
             ) : nextLevel ? (
               <Pressable
@@ -640,7 +693,23 @@ export default function GameScreen({ levelId }) {
                 <Text style={styles.primaryButtonText}>
                   {isChapterCompletionVisible
                     ? `Continue to ${nextChapter.title}`
-                    : 'Go to Next Level'}
+                    : isChallengeMode ? 'Continue Challenge' : 'Go to Next Level'}
+                </Text>
+              </Pressable>
+            ) : null}
+            {isCompletionVisible && !isChapterCompletionVisible ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={isChallengeMode ? 'Restart challenge from Level 1' : 'Retry this level'}
+                onPress={handleRetryLevel}
+                style={({ pressed }) => [
+                  styles.homeButton,
+                  { backgroundColor: colors.palePrimary },
+                  pressed && styles.pressedButton,
+                ]}
+              >
+                <Text style={[styles.homeButtonText, { color: colors.primary }]}>
+                  {isChallengeMode ? 'Restart Challenge' : 'Retry Level'}
                 </Text>
               </Pressable>
             ) : null}

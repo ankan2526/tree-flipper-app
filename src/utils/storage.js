@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const COMPLETED_LEVELS_KEY = '@tree-flipper/completed-levels';
 const BEST_SCORES_KEY = '@tree-flipper/best-scores';
+const CHALLENGE_BEST_SCORE_KEY = '@tree-flipper/challenge-best-score';
 const THEME_KEY = '@tree-flipper/theme';
 const SOUND_SETTINGS_KEY = '@tree-flipper/sound-settings';
 
@@ -71,6 +72,25 @@ export async function saveBestScore(levelId, moves) {
   return { isNewBest: false, scores: currentScores };
 }
 
+export async function getChallengeBestScore() {
+  const value = await AsyncStorage.getItem(CHALLENGE_BEST_SCORE_KEY);
+  if (value === null) return null;
+  const score = Number(value);
+  return Number.isSafeInteger(score) && score >= 0 ? score : null;
+}
+
+export async function saveChallengeBestScore(moves) {
+  if (!Number.isSafeInteger(moves) || moves < 0) {
+    return { isNewBest: false, bestScore: await getChallengeBestScore() };
+  }
+  const currentBest = await getChallengeBestScore();
+  if (currentBest === null || moves < currentBest) {
+    await AsyncStorage.setItem(CHALLENGE_BEST_SCORE_KEY, String(moves));
+    return { isNewBest: true, bestScore: moves };
+  }
+  return { isNewBest: false, bestScore: currentBest };
+}
+
 export async function getThemeSetting() {
   const val = await AsyncStorage.getItem(THEME_KEY);
   if (val === 'forest' || val === 'dark' || val === 'ocean' || val === 'sunset') {
@@ -85,7 +105,7 @@ export async function saveThemeSetting(themeKey) {
 }
 
 export async function resetAllProgress() {
-  await AsyncStorage.multiRemove([COMPLETED_LEVELS_KEY, BEST_SCORES_KEY]);
+  await AsyncStorage.multiRemove([COMPLETED_LEVELS_KEY, BEST_SCORES_KEY, CHALLENGE_BEST_SCORE_KEY]);
 }
 
 export async function getSoundSettings() {

@@ -14,7 +14,7 @@ import { useFocusEffect, router } from 'expo-router';
 
 import GAME_CHAPTERS from '../data/chapters.json';
 import { getChapterProgress, getNextPlayableLevel } from '../utils/chapterProgress';
-import { getCompletedLevels } from '../utils/storage';
+import { getChallengeBestScore, getCompletedLevels } from '../utils/storage';
 import { setCachedCompletedLevels } from '../utils/progressCache';
 import { useAppTheme } from '../context/ThemeContext';
 import { useAudio } from '../context/AudioContext';
@@ -24,16 +24,21 @@ export default function HomeScreen() {
   const { colors } = useAppTheme();
   const { playTapSound } = useAudio();
   const [completedLevels, setCompletedLevels] = useState([]);
+  const [challengeBestScore, setChallengeBestScore] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const isMounted = useRef(false);
 
   const loadProgress = useCallback(async () => {
     try {
-      const completed = await getCompletedLevels();
+      const [completed, bestChallengeScore] = await Promise.all([
+        getCompletedLevels(),
+        getChallengeBestScore(),
+      ]);
       if (isMounted.current) {
         setCachedCompletedLevels(completed);
         setCompletedLevels(completed);
+        setChallengeBestScore(bestChallengeScore);
       }
     } catch (error) {
       if (isMounted.current) {
@@ -68,12 +73,18 @@ export default function HomeScreen() {
 
   const openNextLevel = () => {
     playTapSound();
-    if (nextPlayable?.level) {
-      router.push({ pathname: '/game', params: { levelId: nextPlayable.level.id } });
+    if (allComplete && GAME_CHAPTERS[0]) {
+      const firstLevel = chapters[0]?.chapterLevels[0];
+      if (firstLevel) {
+        router.push({
+          pathname: '/game',
+          params: { levelId: firstLevel.id, mode: 'challenge', challengeMoves: '0' },
+        });
+      }
       return;
     }
-    if (allComplete && GAME_CHAPTERS[0]) {
-      router.push({ pathname: '/game', params: { levelId: chapters[0].chapterLevels[0]?.id } });
+    if (nextPlayable?.level) {
+      router.push({ pathname: '/game', params: { levelId: nextPlayable.level.id } });
       return;
     }
     const firstUnlockedChapter = chapters.find((chapter) => chapter.isUnlocked);
@@ -153,12 +164,14 @@ export default function HomeScreen() {
   };
 
   const ctaTitle = allComplete
-    ? 'Play Again'
+    ? 'Start Challenge'
     : nextPlayable
       ? `Continue Chapter ${String(nextPlayable.chapter.index + 1).padStart(2, '0')}`
       : 'Choose a Chapter';
   const ctaSubtitle = allComplete
-    ? 'Replay your first puzzle'
+    ? challengeBestScore === null
+      ? 'Play every level in one run'
+      : `Play every level · Best: ${challengeBestScore} moves`
     : nextPlayable
       ? `Next up: ${nextPlayable.level.name}`
       : 'Your next puzzle is waiting';
@@ -239,7 +252,7 @@ export default function HomeScreen() {
               ]}
             >
               <View style={styles.ctaTextWrap}>
-                <Text style={styles.ctaEyebrow}>{allComplete ? 'READY FOR ANOTHER ROUND?' : 'PICK UP WHERE YOU LEFT OFF'}</Text>
+                <Text style={styles.ctaEyebrow}>{allComplete ? 'UNLOCKED' : 'PICK UP WHERE YOU LEFT OFF'}</Text>
                 <Text style={styles.ctaTitle}>{ctaTitle}</Text>
                 <Text style={styles.ctaSubtitle}>{ctaSubtitle}</Text>
               </View>
